@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginFormData {
   email: string;
@@ -7,6 +9,8 @@ interface LoginFormData {
 }
 
 export default function AdminLogin() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
@@ -33,11 +37,15 @@ export default function AdminLogin() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // Handle login logic here
-      console.log('Form submitted:', formData);
+      try {
+        await login({ ...formData, role: 'admin' });
+        navigate('/admin/dashboard');
+      } catch (error) {
+        console.error('Login failed:', error);
+      }
     }
   };
 
