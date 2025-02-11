@@ -29,35 +29,31 @@ export function useAuth() {
 
   const login = async (credentials: { email: string; password: string; role: 'admin' | 'teacher' }) => {
     try {
-      // Admin credentials check
-      if (credentials.role === 'admin' && 
-          credentials.email === 'admin@gmail.com' && 
-          credentials.password === 'admin123') {
-        const adminUser = {
-          id: 'admin-1',
-          role: 'admin' as const,
-          name: 'Admin'
-        };
-        localStorage.setItem('user', JSON.stringify(adminUser));
-        setUser(adminUser);
-        return { success: true };
+      const response = await fetch('http://localhost:5000/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
       }
-      
-      // Teacher credentials check
-      if (credentials.role === 'teacher' && 
-          credentials.email === 'teacher@gmail.com' && 
-          credentials.password === 'teacher123') {
-        const teacherUser = {
-          id: 'teacher-1',
-          role: 'teacher' as const,
-          name: 'John Smith'
-        };
-        localStorage.setItem('user', JSON.stringify(teacherUser));
-        setUser(teacherUser);
-        return { success: true };
-      }
-      
-      return { success: false, error: 'Invalid credentials' };
+
+      const userData = {
+        id: data._id,
+        role: data.role,
+        name: data.name,
+        token: data.token
+      };
+
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', data.token);
+      setUser(userData);
+      return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
       return { success: false, error: 'Login failed' };
@@ -70,4 +66,4 @@ export function useAuth() {
   };
 
   return { user, isLoading, login, logout };
-} 
+}

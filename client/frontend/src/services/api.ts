@@ -9,6 +9,7 @@ interface ExamData {
   branch: string;
   duration: number;
   totalMarks: number;
+  createdBy?: string; // Add createdBy field
 }
 
 interface TeacherData {

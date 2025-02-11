@@ -302,8 +302,7 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Branch Selector */}
-        <div className="mb-8">
+        {/* Branch Selector */}        <div className="mb-8">
           <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Select Branch</label>
           <select
             id="branch"

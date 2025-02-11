@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Plus, Download } from 'lucide-react';
 import api from '../../services/api';
+import  ExamDetailModal from './ExamDetailModal';
 
 interface Subject {
   id: string;
@@ -15,6 +16,32 @@ interface ExamSlot {
   startTime: string;
   endTime: string;
   block: string;
+  subject: string;
+}
+
+interface Block {
+  number: number;
+  invigilator?: string;
+  capacity: number;
+  location: string;
+  status: string;
+}
+
+interface ExamSlotWithBlocks extends ExamSlot {
+  blocks?: Block[];
+  subject: string;
+}
+
+interface ExamResponse {
+  _id: string;
+  subject: {
+    name: string;
+  };
+  date: string;
+  startTime: string;
+  endTime: string;
+  block?: string;
+  blocks?: Block[];
 }
 
 export default function ExamTimetable() {
@@ -29,6 +56,8 @@ export default function ExamTimetable() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedExam, setSelectedExam] = useState<ExamSlotWithBlocks | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,33 +65,36 @@ export default function ExamTimetable() {
         setLoading(true);
         setError('');
         const response = await api.get(`/api/exams/${branch}`);
-        const examData = response.data;
+        const examData = response.data as ExamResponse[];
         
-        if (!examData || examData.length === 0) {
-          setError('No exam data found for this branch');
-          setSubjects([]);
-          setExamSlots([]);
-          return;
+        // Initialize empty arrays for subjects and exam slots
+        setSubjects([]);
+        setExamSlots([]);
+        
+        if (examData && examData.length > 0) {
+          // Extract unique subjects from exam data and preserve their original IDs
+          const uniqueSubjects = [...new Set(examData.map(exam => exam.subject.name))]
+            .map(name => ({
+              id: name, // Use the subject name as the ID for consistent mapping
+              name: name
+            }));
+          setSubjects(uniqueSubjects);
+          
+          // Set exam slots
+          setExamSlots(examData.map(exam => ({
+            id: exam._id,
+            subjectId: exam.subject.name, // Use subject name as ID for consistent mapping
+            subject: exam.subject.name,
+            date: new Date(exam.date).toISOString().split('T')[0],
+            startTime: exam.startTime,
+            endTime: exam.endTime,
+            block: exam.block || 'TBD',
+            blocks: exam.blocks
+          })));
         }
-        
-        // Extract unique subjects from exam data
-        const uniqueSubjects = [...new Set(examData.map((exam: { subject: { name: string } }) => exam.subject.name))].map((name: unknown, index: number) => ({
-          id: index.toString(),
-          name: name as string
-        }));
-        setSubjects(uniqueSubjects);
-        
-        // Set exam slots
-        setExamSlots(examData.map((exam: { _id: string; subject: { name: string }; date: string; startTime: string; endTime: string; block?: string }) => ({
-          id: exam._id,
-          subjectId: exam.subject.name,
-          date: new Date(exam.date).toISOString().split('T')[0],
-          startTime: exam.startTime,
-          endTime: exam.endTime,
-          block: exam.block || 'TBD'
-        })));
       } catch (err) {
-        const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to fetch exam data. Please check your connection and try again.';
+        const error = err as Error;
+        const errorMessage = error.message || 'Failed to fetch exam data. Please check your connection and try again.';
         setError(errorMessage);
         console.error('Error fetching exam data:', err);
       } finally {
@@ -97,19 +129,24 @@ export default function ExamTimetable() {
     if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end) {
       try {
         setError('');
+        const subjectName = subjects.find(s => s.id === selectedSubject)?.name;
+        if (!subjectName) {
+          setError('Invalid subject selected');
+          return;
+        }
+
         const response = await api.post('/api/exams', {
           branch,
-          subject: {
-            name: subjects.find(s => s.id === selectedSubject)?.name
-          },
+          subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
           endTime: selectedTime.end
         });
-
+    
         const newSlot: ExamSlot = {
           id: response.data._id,
           subjectId: selectedSubject,
+          subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
           endTime: selectedTime.end,
@@ -151,6 +188,34 @@ export default function ExamTimetable() {
     }
   };
 
+  const handleExamClick = (exam: ExamSlotWithBlocks) => {
+    setSelectedExam(exam);
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateBlock = async (blockNumber: number, blockData: Partial<Block>) => {
+    if (!selectedExam) return;
+
+    try {
+      const response = await api.patch(`/api/exams/${selectedExam.id}/blocks/${blockNumber}`, blockData);
+      if (response.data) {
+        const updatedExam = {
+          ...selectedExam,
+          blocks: response.data.blocks
+        };
+        setSelectedExam(updatedExam);
+        
+        setExamSlots(examSlots.map(slot =>
+          slot.id === updatedExam.id ? { ...slot, blocks: updatedExam.blocks } : slot
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating block:', error);
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+      setError(errorMessage || 'An error occurred while updating the block');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -170,15 +235,17 @@ export default function ExamTimetable() {
                 <h2 className="text-2xl font-bold text-gray-900">Exam Timetable</h2>
                 <p className="mt-1 text-sm text-gray-500">{branch}</p>
               </div>
-              <div className="mt-4 flex md:mt-0 md:ml-4">
-                <button
-                  onClick={handleExportToExcel}
-                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
-                >
-                  <Download className="-ml-1 mr-2 h-5 w-5" />
-                  Export to Excel
-                </button>
-              </div>
+              {examSlots.length > 0 && (
+                <div className="mt-4 flex md:mt-0 md:ml-4">
+                  <button
+                    onClick={handleExportToExcel}
+                    className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+                  >
+                    <Download className="-ml-1 mr-2 h-5 w-5" />
+                    Export to Excel
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Subject Management */}
@@ -212,16 +279,20 @@ export default function ExamTimetable() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {subjects.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className="p-3 bg-gray-50 rounded-md flex items-center justify-between"
-                  >
-                    <span>{subject.name}</span>
-                  </div>
-                ))}
-              </div>
+              {subjects.length > 0 ? (
+                <div key="subjects-grid" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {subjects.map((subject) => (
+                    <div
+                      key={subject.id}
+                      className="p-3 bg-gray-50 rounded-md flex items-center justify-between"
+                    >
+                      <span>{subject.name}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No subjects added yet. Add your first subject to get started.</p>
+              )}
             </div>
 
             {/* Exam Slot Scheduling */}
@@ -278,7 +349,8 @@ export default function ExamTimetable() {
               <div className="mt-4">
                 <button
                   onClick={handleAddExamSlot}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A]"
+                  disabled={!selectedSubject || !selectedDate || !selectedTime.start || !selectedTime.end}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="-ml-1 mr-2 h-5 w-5" />
                   Add Exam Slot
@@ -287,38 +359,67 @@ export default function ExamTimetable() {
             </div>
 
             {/* Scheduled Exams */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium mb-4">Scheduled Exams</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {examSlots.map((slot) => (
-                      <tr key={slot.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">{slot.date}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {subjects.find(s => s.id === slot.subjectId)?.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {slot.startTime} - {slot.endTime}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{slot.block}</td>
+            {examSlots.length > 0 ? (
+              <div className="bg-white shadow rounded-lg p-6">
+                <h3 className="text-lg font-medium mb-4">Scheduled Exams</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {examSlots.map((slot) => (
+                        <tr 
+                          key={slot.id}
+                          onClick={() => handleExamClick(slot)}
+                          className="cursor-pointer hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">{slot.date}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {slot.subject}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {slot.startTime} - {slot.endTime}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap flex items-center justify-between">
+                            <span>{slot.block}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExamClick(slot);
+                              }}
+                              className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
+                            >
+                              Edit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-white shadow rounded-lg p-6 text-center">
+                <p className="text-gray-500">No exams scheduled yet. Add your first exam slot to get started.</p>
+              </div>
+            )}
           </>
         )}
       </div>
+      {selectedExam && (
+        <ExamDetailModal
+          exam={selectedExam}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onUpdateBlock={handleUpdateBlock}
+        />
+      )}
     </div>
   );
 }

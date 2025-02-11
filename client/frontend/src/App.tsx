@@ -7,6 +7,8 @@ import TeacherDashboard from './components/dashboard/TeacherDashboard';
 import DutiesPage from './pages/teacher/DutiesPage';
 import RemunerationPage from './pages/teacher/RemunerationPage';
 import NotificationsPage from './pages/teacher/NotificationsPage';
+import SchedulePage from './pages/teacher/SchedulePage';
+import ReportsPage from './pages/teacher/ReportsPage';
 import ExamTimetable from './components/timetable/ExamTimetable';
 import TeacherAllocation from './components/allocation/TeacherAllocation';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
@@ -34,6 +36,8 @@ function App() {
         <Route path="/teacher" element={<ProtectedRoute role="teacher" />}>
           <Route path="dashboard" element={<TeacherDashboard />} />
           <Route path="duties" element={<DutiesPage />} />
+          <Route path="schedule" element={<SchedulePage />} />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="remuneration" element={<RemunerationPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
         </Route>
