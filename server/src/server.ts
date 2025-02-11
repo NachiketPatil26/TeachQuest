@@ -7,6 +7,7 @@ import { protect, adminOnly, teacherOnly } from './middleware/auth';
 import * as userController from './controllers/userController';
 import * as examController from './controllers/examController';
 import * as notificationController from './controllers/notificationController';
+import * as branchController from './controllers/branchController';
 import User from './models/User';
 
 // Error handling interface
@@ -61,10 +62,57 @@ app.put('/api/users/profile', userController.updateUserProfile as express.Reques
 
 // Admin Routes
 app.use('/api/admin', protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler);
-app.post('/api/exams', (examController.createExam as unknown as express.RequestHandler));
-app.put('/api/exams/:id', (examController.updateExam as unknown as express.RequestHandler));
-app.delete('/api/exams/:id', (examController.deleteExam as unknown as express.RequestHandler));
-app.post('/api/exams/:id/allocate', (examController.allocateTeachers as unknown as express.RequestHandler));
+
+// Exam Routes
+app.post('/api/exams', examController.createExam as unknown as express.RequestHandler);
+app.get('/api/exams/:branch', examController.getExamsByBranch as unknown as express.RequestHandler);
+app.put('/api/exams/:id', examController.updateExam as unknown as express.RequestHandler);
+app.delete('/api/exams/:id', examController.deleteExam as unknown as express.RequestHandler);
+app.post('/api/exams/:id/allocate', examController.allocateTeachers as unknown as express.RequestHandler);
+
+// Branch Routes
+app.get('/api/branches', protect as unknown as express.RequestHandler, async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
+  try {
+    await branchController.getBranches(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
+app.post('/api/branches', protect as unknown as express.RequestHandler, adminOnly as express.RequestHandler, async (req, res, next) => {
+  try {
+    await branchController.createBranch(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
+app.get('/api/branches/:id', protect as unknown as express.RequestHandler, async (req, res, next) => {
+  try {
+    await branchController.getBranchById(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
+app.put('/api/branches/:id', protect as unknown as express.RequestHandler, adminOnly as express.RequestHandler, async (req, res, next) => {
+  try {
+    await branchController.updateBranch(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
+app.post('/api/branches/:id/teachers', protect as unknown as express.RequestHandler, adminOnly as express.RequestHandler, async (req, res, next) => {
+  try {
+    await branchController.addTeacherToBranch(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
+app.delete('/api/branches/:id/teachers', protect as unknown as express.RequestHandler, adminOnly as express.RequestHandler, async (req, res, next) => {
+  try {
+    await branchController.removeTeacherFromBranch(req, res);
+  } catch (error) {
+    next(error);
+  }
+}) as express.RequestHandler;
 
 // Teacher Routes
 app.use('/api/teacher', protect as unknown as express.RequestHandler, teacherOnly as express.RequestHandler);

@@ -41,14 +41,41 @@ export const getExams = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Branch parameter is required' });
     }
 
+    const decodedBranch = decodeURIComponent(branch);
+    console.log('Fetching exams for branch:', decodedBranch);
+
+    const exams = await Exam.find({ branch: { $regex: new RegExp('^' + decodedBranch + '$', 'i') } })
+      .populate('allocatedTeachers', 'name email')
+      .sort({ date: 1, startTime: 1 });
+
+    if (!exams || exams.length === 0) {
+      return res.status(404).json({ message: `No exams found for branch: ${decodedBranch}` });
+    }
+
+    console.log(`Found ${exams.length} exams for branch ${decodedBranch}`);
+    res.json(exams);
+  } catch (error) {
+    console.error('Get exams error:', error);
+    res.status(500).json({ message: 'Failed to fetch exams', error: error.message });
+  }
+};
+
+// Get exams by branch
+export const getExamsByBranch = async (req: Request, res: Response) => {
+  try {
+    const { branch } = req.params;
+    if (!branch) {
+      return res.status(400).json({ message: 'Branch parameter is required' });
+    }
+
     const exams = await Exam.find({ branch })
       .populate('allocatedTeachers', 'name email')
       .sort({ date: 1, startTime: 1 });
 
     res.json(exams);
   } catch (error) {
-    console.error('Get exams error:', error);
-    res.status(500).json({ message: 'Failed to fetch exams' });
+    console.error('Get exams by branch error:', error);
+    res.status(500).json({ message: 'Failed to fetch exams for branch' });
   }
 };
 

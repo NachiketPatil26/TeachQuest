@@ -12,7 +12,7 @@ import { protect, adminOnly as admin } from '../middleware/auth';
 
 const router = express.Router();
 
-router.route('/')
+router.route('/:branch')
   .get(protect as unknown as express.RequestHandler, async (req, res, next) => {
     await getExams(req, res);
   })

@@ -35,8 +35,15 @@ export default function ExamTimetable() {
       try {
         setLoading(true);
         setError('');
-        const response = await api.get(`/api/exams/${branch}`).then(res => res.data);
-        const examData = response;
+        const response = await api.get(`/api/exams/${branch}`);
+        const examData = response.data;
+        
+        if (!examData || examData.length === 0) {
+          setError('No exam data found for this branch');
+          setSubjects([]);
+          setExamSlots([]);
+          return;
+        }
         
         // Extract unique subjects from exam data
         const uniqueSubjects = [...new Set(examData.map((exam: { subject: { name: string } }) => exam.subject.name))].map((name: unknown, index: number) => ({

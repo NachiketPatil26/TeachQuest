@@ -4,7 +4,7 @@ import Notification from '../models/Notification';
 // Get all notifications for a user
 export const getUserNotifications = async (req: Request, res: Response) => {
   try {
-    const notifications = await Notification.find({ recipient: req.params.userId })
+    const notifications = await Notification.find({ user: req.params.userId })
       .populate('exam', 'name subject date startTime')
       .sort({ createdAt: -1 });
     res.json(notifications);
@@ -17,7 +17,7 @@ export const getUserNotifications = async (req: Request, res: Response) => {
 export const getUnreadCount = async (req: Request, res: Response) => {
   try {
     const count = await Notification.countDocuments({
-      recipient: req.params.userId,
+      user: req.params.userId,
       read: false
     });
     res.json({ count });
@@ -35,7 +35,7 @@ export const markAsRead = async (req: Request, res: Response) => {
       return;
     }
 
-    if (notification.recipient.toString() !== req.params.userId) {
+    if (notification.user.toString() !== req.params.userId) {
       res.status(403).json({ message: 'Not authorized' });
       return;
     }
@@ -53,7 +53,7 @@ export const markAsRead = async (req: Request, res: Response) => {
 export const markAllAsRead = async (req: Request, res: Response) => {
   try {
     await Notification.updateMany(
-      { recipient: req.params.userId, read: false },
+      { user: req.params.userId, read: false },
       { read: true }
     );
     res.json({ message: 'All notifications marked as read' });
@@ -71,7 +71,7 @@ export const deleteNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    if (notification.recipient.toString() !== req.params.userId) {
+    if (notification.user.toString() !== req.params.userId) {
       res.status(403).json({ message: 'Not authorized' });
       return;
     }

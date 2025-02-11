@@ -125,7 +125,7 @@ export default function AdminDashboard() {
       description: 'Upload and manage examination schedules',
       icon: <Calendar size={24} />,
       onClick: () => navigate(`/admin/timetable/${selectedBranch}`),
-      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAF9A] text-white'
+      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAFx9A] text-white'
     },
     {
       title: 'Teacher Allocation',
