@@ -60,6 +60,9 @@ app.use('/api/users', protect as unknown as express.RequestHandler);
 app.get('/api/users/profile', userController.getUserProfile as express.RequestHandler);
 app.put('/api/users/profile', userController.updateUserProfile as express.RequestHandler);
 
+// Teacher Routes
+app.get('/api/users/teachers', protect as unknown as express.RequestHandler, userController.getTeachers as unknown as express.RequestHandler);
+
 // Admin Routes
 app.use('/api/admin', protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler);
 

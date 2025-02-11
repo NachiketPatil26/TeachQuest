@@ -3,13 +3,18 @@ import axios, { AxiosError } from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface ExamData {
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   date: string;
-  branch: string;
-  duration: number;
-  totalMarks: number;
-  createdBy?: string; // Add createdBy field
+  branch?: string;
+  duration?: number;
+  totalMarks?: number;
+  createdBy?: string;
+  block?: string;
+  subject?: string;
+  startTime?: string;
+  endTime?: string;
+  allocatedTeachers?: string[];
 }
 
 interface TeacherData {
@@ -65,7 +70,7 @@ export const login = async (email: string, password: string, role: 'admin' | 'te
 // Exam APIs
 export const getExams = async (branch: string) => {
   try {
-    const response = await api.get(`/api/exams/${branch}`);
+    const response = await api.get(`/api/exams/${encodeURIComponent(branch)}`);
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
@@ -112,18 +117,10 @@ export const allocateTeachers = async (examId: string, teacherIds: string[]) => 
 };
 
 // Teacher APIs
+// Teacher management
 export const getTeachers = async () => {
-  try {
-    const response = await api.get('/api/users/teachers');
-    return response.data;
-  } catch (error) {
-    const err = error as AxiosError;
-    throw new Error(
-      typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
-        ? (err.response.data as { message: string }).message
-        : 'Failed to fetch teachers. Please try again.'
-    );
-  }
+  const response = await api.get('/api/users/teachers');
+  return response.data;
 };
 
 export const updateTeacherProfile = async (userData: Partial<TeacherData>) => {

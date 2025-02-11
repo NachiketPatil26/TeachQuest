@@ -71,45 +71,58 @@ export default function AdminDashboard() {
   };
 
   // Branch Selector with Add Branch button
-  <div className="mb-8 space-y-4">
-    <div className="flex justify-between items-center">
-      <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Select Branch</label>
-      <button
-        onClick={() => setShowAddBranch(!showAddBranch)}
-        className="text-sm text-[#9FC0AE] hover:text-[#8BAF9A] focus:outline-none"
-      >
-        + Add New Branch
-      </button>
-    </div>
-    {showAddBranch && (
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={newBranch}
-          onChange={(e) => setNewBranch(e.target.value)}
-          placeholder="Enter branch name"
-          className="flex-1 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] sm:text-sm rounded-md"
-        />
+  const BranchSelector = () => (
+    <div className="bg-white shadow rounded-lg p-6 mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium text-gray-900">Branch Management</h3>
         <button
-          onClick={handleAddBranch}
-          className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-[#9FC0AE] focus:ring-offset-2"
+          onClick={() => setShowAddBranch(!showAddBranch)}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
         >
-          Add
+          + Add New Branch
         </button>
       </div>
-    )}
-    <select
-      id="branch"
-      name="branch"
-      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] sm:text-sm rounded-md"
-      value={selectedBranch}
-      onChange={(e) => setSelectedBranch(e.target.value)}
-    >
-      {branches.map((branch) => (
-        <option key={branch} value={branch}>{branch}</option>
-      ))}
-    </select>
-  </div>
+      
+      {showAddBranch && (
+        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={newBranch}
+              onChange={(e) => setNewBranch(e.target.value)}
+              placeholder="Enter branch name"
+              className="flex-1 pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] rounded-md shadow-sm"
+            />
+            <button
+              onClick={handleAddBranch}
+              className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-[#9FC0AE] focus:ring-offset-2 shadow-sm"
+            >
+              Add Branch
+            </button>
+          </div>
+        </div>
+      )}
+      
+      <div className="relative">
+        <select
+          id="branch"
+          name="branch"
+          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] rounded-md shadow-sm"
+          value={selectedBranch}
+          onChange={(e) => setSelectedBranch(e.target.value)}
+        >
+          {branches.map((branch) => (
+            <option key={branch} value={branch}>{branch}</option>
+          ))}
+        </select>
+        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+          <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fillRule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clipRule="evenodd" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
 
   useEffect(() => {
     // Simulate loading data
@@ -125,7 +138,7 @@ export default function AdminDashboard() {
       description: 'Upload and manage examination schedules',
       icon: <Calendar size={24} />,
       onClick: () => navigate(`/admin/timetable/${selectedBranch}`),
-      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAFx9A] text-white'
+      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAFx9A] '
     },
     {
       title: 'Teacher Allocation',
@@ -302,20 +315,8 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Branch Selector */}        <div className="mb-8">
-          <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Select Branch</label>
-          <select
-            id="branch"
-            name="branch"
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
-          >
-            {branches.map((branch) => (
-              <option key={branch} value={branch}>{branch}</option>
-            ))}
-          </select>
-        </div>
+        {/* Branch Selector */}
+        <BranchSelector />
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -338,26 +339,46 @@ export default function AdminDashboard() {
 
         {/* Upcoming Exams Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">Upcoming Examinations</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Upcoming Examinations</h2>
+              <p className="mt-1 text-sm text-gray-500">View and manage upcoming exam schedule</p>
+            </div>
+            <button
+              onClick={() => navigate(`/admin/timetable/${selectedBranch}`)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+            >
+              View All
+            </button>
+          </div>
+          <div className="overflow-x-auto ring-1 ring-gray-300 rounded-lg">
+            <table className="min-w-full divide-y divide-gray-300">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Date</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Subject</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Time</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {/* Example row */}
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap">2024-03-15</td>
-                  <td className="px-6 py-4 whitespace-nowrap">Mathematics</td>
-                  <td className="px-6 py-4 whitespace-nowrap">09:00 AM</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              <tbody className="divide-y divide-gray-200 bg-white">
+                <tr className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-15</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Mathematics</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">09:00 AM</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
                       Allocated
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-16</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Physics</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">10:00 AM</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-600/20">
+                      Pending
                     </span>
                   </td>
                 </tr>

@@ -3,10 +3,10 @@ import { X } from 'lucide-react';
 
 interface Block {
   number: number;
-  invigilator?: string;
   capacity: number;
   location: string;
-  status: string;
+  status: 'pending' | 'completed';
+  completedAt?: string;
 }
 
 interface ExamDetailModalProps {
@@ -30,6 +30,18 @@ export default function ExamDetailModal({ exam, isOpen, onClose, onUpdateBlock }
 
   const handleBlockUpdate = async (blockNumber: number, field: keyof Block, value: string | number) => {
     try {
+      // Validate capacity
+      if (field === 'capacity' && typeof value === 'number' && value < 0) {
+        console.error('Capacity must be a positive number');
+        return;
+      }
+
+      // Validate status
+      if (field === 'status' && value !== 'pending' && value !== 'completed') {
+        console.error('Invalid status value');
+        return;
+      }
+
       await onUpdateBlock(blockNumber, { [field]: value });
     } catch (error) {
       console.error('Error updating block:', error);
@@ -68,30 +80,44 @@ export default function ExamDetailModal({ exam, isOpen, onClose, onUpdateBlock }
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Blocks</h3>
             <button
-              onClick={() => onUpdateBlock(blocks.length + 1, { number: blocks.length + 1, capacity: 0, location: '', status: 'pending' })}
+              onClick={() => {
+                const nextBlockLetter = String.fromCharCode(65 + blocks.length);
+                onUpdateBlock(blocks.length, {
+                  number: blocks.length,
+                  capacity: 0,
+                  location: `Block ${nextBlockLetter}`,
+                  status: 'pending'
+                });
+              }}
               className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] text-sm"
             >
               Add Block
             </button>
           </div>
-          {[1, 2, 3, 4].map((blockNumber) => {
-            const block = blocks.find(b => b.number === blockNumber) || {
-              number: blockNumber,
+          {['A', 'B', 'C', 'D'].map((blockLetter, index) => {
+            const block = blocks.find(b => b.number === index) || {
+              number: index,
               capacity: 0,
               location: '',
-              status: 'pending'
+              status: 'pending' as const
             };
-
+          
             return (
-              <div key={blockNumber} className="border rounded-lg p-4">
-                <h4 className="font-medium mb-3">Block {blockNumber}</h4>
+              <div key={blockLetter} className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Block {blockLetter}</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-500 mb-1">Capacity</label>
                     <input
                       type="number"
+                      min="1"
                       value={block.capacity}
-                      onChange={(e) => handleBlockUpdate(blockNumber, 'capacity', parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value > 0) {
+                          handleBlockUpdate(index, 'capacity', value);
+                        }
+                      }}
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
                     />
                   </div>
@@ -100,20 +126,19 @@ export default function ExamDetailModal({ exam, isOpen, onClose, onUpdateBlock }
                     <input
                       type="text"
                       value={block.location}
-                      onChange={(e) => handleBlockUpdate(blockNumber, 'location', e.target.value)}
+                      onChange={(e) => handleBlockUpdate(index, 'location', e.target.value)}
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
                       placeholder="Enter location"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div>
                     <label className="block text-sm text-gray-500 mb-1">Status</label>
                     <select
                       value={block.status}
-                      onChange={(e) => handleBlockUpdate(blockNumber, 'status', e.target.value)}
+                      onChange={(e) => handleBlockUpdate(index, 'status', e.target.value)}
                       className="w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
                     >
                       <option value="pending">Pending</option>
-                      <option value="in_progress">In Progress</option>
                       <option value="completed">Completed</option>
                     </select>
                   </div>

@@ -154,3 +154,31 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const getTeachers = async (req: Request, res: Response) => {
+  try {
+    const teachers = await User.find({ role: 'teacher' })
+      .select('-password -tokens')
+      .lean();
+
+    if (!teachers) {
+      return res.status(404).json({ message: 'No teachers found' });
+    }
+
+    res.json(teachers);
+  } catch (error: any) {
+    console.error('Get teachers error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export default {
+  loginUser,
+  registerUser,
+  getUserProfile,
+  updateUserProfile,
+  getTeachers
+};
