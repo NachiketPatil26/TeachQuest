@@ -132,6 +132,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 
       if (req.body.password) {
         user.password = req.body.password;
+        user.markModified('password');
       }
 
       const updatedUser = await user.save();

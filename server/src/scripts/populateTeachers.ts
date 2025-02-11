@@ -110,16 +110,16 @@ async function populateTeachers() {
     await User.deleteMany({ role: 'teacher' });
     console.log('Cleared existing teachers');
 
-    // Insert new teachers
-    const teachers = await User.insertMany(teacherData);
-    console.log(`Successfully inserted ${teachers.length} teachers`);
-
-    // Log the inserted teachers
-    teachers.forEach(teacher => {
+    // Insert new teachers using create() to trigger middleware
+    const teachers = [];
+    for (const data of teacherData) {
+      const teacher = await User.create(data);
+      teachers.push(teacher);
       console.log(`Added teacher: ${teacher.name} (${teacher.email})`);
       console.log(`Subjects: ${teacher.subjects?.join(', ')}`);
       console.log('---');
-    });
+    }
+    console.log(`Successfully inserted ${teachers.length} teachers`);
 
   } catch (error) {
     console.error('Error populating teachers:', error);

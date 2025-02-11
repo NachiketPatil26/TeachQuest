@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Calendar,
   ClipboardList,
@@ -53,6 +54,7 @@ function StatsCard({ title, value, trend }: { title: string; value: string; tren
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -211,7 +213,7 @@ export default function TeacherDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, Teacher</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, {user?.name || 'Teacher'}</h1>
           <p className="text-gray-600">
             {currentTime.toLocaleDateString('en-US', { 
               weekday: 'long',
@@ -245,23 +247,48 @@ export default function TeacherDashboard() {
 
         {/* Upcoming Duties Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">Upcoming Duties</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Upcoming Duties</h2>
+              <p className="mt-1 text-sm text-gray-500">View and manage your examination duties</p>
+            </div>
+            <button
+              onClick={() => navigate('/teacher/duties')}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+            >
+              View All
+            </button>
+          </div>
+          <div className="overflow-x-auto ring-1 ring-gray-300 rounded-lg">
+            <table className="min-w-full divide-y divide-gray-300">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Date</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Subject</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Time</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap">2024-03-15</td>
-                  <td className="px-6 py-4 whitespace-nowrap">Mathematics</td>
-                  <td className="px-6 py-4 whitespace-nowrap">09:00 AM</td>
-                  <td className="px-6 py-4 whitespace-nowrap">Room 101</td>
+              <tbody className="divide-y divide-gray-200 bg-white">
+                <tr className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-15</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Mathematics</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">09:00 AM</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                      Confirmed
+                    </span>
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-16</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Physics</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">10:00 AM</td>
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
+                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-600/20">
+                      Pending
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
