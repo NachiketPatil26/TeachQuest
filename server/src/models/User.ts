@@ -9,6 +9,7 @@ export interface IUser extends mongoose.Document {
   phone?: string;
   branch?: mongoose.Types.ObjectId;
   subjects?: string[];
+  availability?: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday')[];
   remuneration: number;
   tokens: { token: string }[];
   active: boolean;
@@ -48,6 +49,10 @@ const userSchema = new mongoose.Schema<IUser>(
       ref: 'Branch'
     },
     subjects: [{
+      type: String,
+      trim: true
+    }],
+    availability: [{
       type: String,
       trim: true
     }],

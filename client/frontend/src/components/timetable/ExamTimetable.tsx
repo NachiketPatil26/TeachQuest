@@ -12,7 +12,7 @@ interface Subject {
 
 
 interface ExamSlot {
-  id: string;
+  _id: string;
   subjectId: string;
   subject: string;
   date: string;
@@ -133,7 +133,7 @@ export default function ExamTimetable(): React.ReactElement {
         });
     
         const newSlot: ExamSlot = {
-          id: response.data._id,
+          _id: response.data._id,
           subjectId: selectedSubject,
           subject: subjectName,
           date: selectedDate,
@@ -199,7 +199,7 @@ export default function ExamTimetable(): React.ReactElement {
       }
   
       // Update block data
-      const response = await api.patch(`/api/exams/${selectedExam.id}/blocks/${blockNumber}`, blockData);
+      const response = await api.patch(`/api/exams/${selectedExam._id}/blocks/${blockNumber}`, blockData);
       if (response.data) {
         const updatedExam = {
           ...selectedExam,
@@ -209,7 +209,7 @@ export default function ExamTimetable(): React.ReactElement {
         
         // Update exam slots with new block data
         setExamSlots(examSlots.map(slot =>
-          slot.id === updatedExam.id ? { ...slot, blocks: updatedExam.blocks } : slot
+          slot._id === updatedExam._id ? { ...slot, blocks: updatedExam.blocks } : slot
         ));
   
         // Check if all blocks are properly configured
@@ -239,7 +239,7 @@ export default function ExamTimetable(): React.ReactElement {
 
       setExamSlots(slots =>
         slots.map(slot =>
-          slot.id === slotId ? { ...slot, block } : slot
+          slot._id === slotId ? { ...slot, block } : slot
         )
       );
     } catch (error) {
@@ -278,11 +278,23 @@ export default function ExamTimetable(): React.ReactElement {
     );
   }
 
+  const handleDeleteExamSlot = async (slotId: string) => {
+    try {
+      setError('');
+      await api.delete(`/api/exams/${slotId}`);
+      setExamSlots(examSlots.filter(slot => slot._id !== slotId));
+    } catch (err) {
+      const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to delete exam slot';
+      setError(errorMessage);
+      console.error('Error deleting exam slot:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between mb-8">
-          <div>
+          <div className=''>
             <h2 className="text-2xl font-bold text-gray-900">Exam TimeTable</h2>
             {examSlots.length > 0 && (
               <div className="mt-4 flex md:mt-0 md:ml-4">
@@ -290,7 +302,7 @@ export default function ExamTimetable(): React.ReactElement {
                   onClick={handleExportToExcel}
                   className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
                 >
-                  <Download className="-ml-1 mr-2 h-5 w-5" />
+                  <Download className="-ml-1 mr-2 h-5 w-5 " />
                   Export to Excel
                 </button>
               </div>
@@ -447,7 +459,7 @@ export default function ExamTimetable(): React.ReactElement {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {examSlots.map((slot) => (
-                  <tr key={slot.id}>
+                  <tr key={slot._id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {new Date(slot.date).toLocaleDateString('en-US', {
                         year: 'numeric',
@@ -462,7 +474,7 @@ export default function ExamTimetable(): React.ReactElement {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={slot.block}
-                        onChange={(e) => handleBlockAssignment(slot.id, e.target.value)}
+                        onChange={(e) => handleBlockAssignment(slot._id, e.target.value)}
                         className="rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
                       >
                         {blocks.map((block) => (
@@ -474,15 +486,28 @@ export default function ExamTimetable(): React.ReactElement {
                       {slot.allocatedTeachers?.length || 0} allocated
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleExamClick(slot);
-                        }}
-                        className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExamClick(slot);
+                          }}
+                          className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to delete this exam slot?')) {
+                              handleDeleteExamSlot(slot._id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -495,24 +520,13 @@ export default function ExamTimetable(): React.ReactElement {
         {examSlots.length > 0 && (
           <div className="flex justify-end mb-8">
             <button
-              onClick={() => {
-                if (allExamsHaveBlocks) {
-                  navigate(`/admin/allocation/${branch}`);
-                } else {
-                  setError('Please configure all exam blocks before proceeding to teacher allocation');
-                }
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admin/allocation/${branch}`);
               }}
-              disabled={!allExamsHaveBlocks || loading}
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
             >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                'Proceed to Teacher Allocation'
-              )}
+              Proceed to Teacher Allocation
             </button>
           </div>
         )}

@@ -1,5 +1,5 @@
-import * as express from 'express';
-import * as cors from 'cors';
+import express from 'express';
+import cors from 'cors';
 import * as dotenv from 'dotenv';
 
 import { connectDB } from './config/db';
@@ -9,6 +9,7 @@ import * as examController from './controllers/examController';
 import * as notificationController from './controllers/notificationController';
 import * as branchController from './controllers/branchController';
 import User from './models/User';
+import teacherRoutes from './routes/teacherRoutes';
 
 // Error handling interface
 interface ErrorWithStatus extends Error {

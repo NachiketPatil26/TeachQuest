@@ -6,10 +6,10 @@ dotenv.config();
 
 // Sample subjects that align with exam subjects
 const subjects = [
-  'Mathematics',
+  'AOA',
   'Physics',
   'Chemistry',
-  'Biology',
+  'DBMS',
   'Computer Science',
   'English',
   'History',
@@ -17,15 +17,22 @@ const subjects = [
 ];
 
 // Sample teacher data
+// Generate random dates for teacher availability
+const generateAvailabilityDays = () => {
+  const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  return weekdays.filter(() => Math.random() > 0.3); // 70% chance of being available on any day
+};
+
 const teacherData = [
   {
     name: 'Dr. Sarah Johnson',
     email: 'sarah.johnson@teachquest.edu',
     password: 'password123', // This should be changed in production
     role: 'teacher',
-    subjects: ['Mathematics', 'Physics'],
+    subjects: ['Mathematics', 'AOA'],
     active: true,
     phone: '123-456-7890',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -33,9 +40,10 @@ const teacherData = [
     email: 'michael.chen@teachquest.edu',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Chemistry', 'Biology'],
+    subjects: ['Chemistry', 'DBMS'],
     active: true,
     phone: '123-456-7891',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -46,6 +54,7 @@ const teacherData = [
     subjects: ['Computer Science', 'Mathematics'],
     active: true,
     phone: '123-456-7892',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -56,6 +65,7 @@ const teacherData = [
     subjects: ['Physics', 'Chemistry'],
     active: true,
     phone: '123-456-7893',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -63,9 +73,10 @@ const teacherData = [
     email: 'lisa.thompson@teachquest.edu',
     password: 'password123',
     role: 'teacher',
-    subjects: ['English', 'History'],
+    subjects: ['English', 'CS'],
     active: true,
     phone: '123-456-7894',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -76,6 +87,7 @@ const teacherData = [
     subjects: ['Geography', 'History'],
     active: true,
     phone: '123-456-7895',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -86,6 +98,7 @@ const teacherData = [
     subjects: ['Biology', 'Chemistry'],
     active: true,
     phone: '123-456-7896',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   },
   {
@@ -96,6 +109,7 @@ const teacherData = [
     subjects: ['Computer Science', 'Mathematics'],
     active: true,
     phone: '123-456-7897',
+    availability: generateAvailabilityDays(),
     remuneration: 1000
   }
 ];

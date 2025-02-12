@@ -11,7 +11,7 @@ interface Block {
 
 interface ExamDetailModalProps {
   exam: {
-    id: string;
+    _id: string;
     subject: string;
     date: string;
     startTime: string;
