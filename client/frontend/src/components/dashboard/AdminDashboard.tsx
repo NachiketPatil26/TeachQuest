@@ -11,7 +11,8 @@ import {
   Bell,
   Search,
   LogOut,
-  
+  Menu,
+  X
 } from 'lucide-react';
 
 // CardSkeleton Component
@@ -55,8 +56,60 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [branches] = useState<string[]>(['Computer Science', 'Mechanical', 'Electrical', 'Civil', 'Electronics']);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [branches, setBranches] = useState<string[]>(['Computer Science', 'Artificial Intelligence & Data Science', 'Information Technology']);
+  const [showAddBranch, setShowAddBranch] = useState(false);
+  const [newBranch, setNewBranch] = useState('');
   const [selectedBranch, setSelectedBranch] = useState<string>('Computer Science');
+
+  const handleAddBranch = () => {
+    if (newBranch.trim() && !branches.includes(newBranch.trim())) {
+      setBranches([...branches, newBranch.trim()]);
+      setNewBranch('');
+      setShowAddBranch(false);
+    }
+  };
+
+  // Branch Selector with Add Branch button
+  <div className="mb-8 space-y-4">
+    <div className="flex justify-between items-center">
+      <label htmlFor="branch" className="block text-sm font-medium text-gray-700">Select Branch</label>
+      <button
+        onClick={() => setShowAddBranch(!showAddBranch)}
+        className="text-sm text-[#9FC0AE] hover:text-[#8BAF9A] focus:outline-none"
+      >
+        + Add New Branch
+      </button>
+    </div>
+    {showAddBranch && (
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={newBranch}
+          onChange={(e) => setNewBranch(e.target.value)}
+          placeholder="Enter branch name"
+          className="flex-1 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] sm:text-sm rounded-md"
+        />
+        <button
+          onClick={handleAddBranch}
+          className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-[#9FC0AE] focus:ring-offset-2"
+        >
+          Add
+        </button>
+      </div>
+    )}
+    <select
+      id="branch"
+      name="branch"
+      className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] sm:text-sm rounded-md"
+      value={selectedBranch}
+      onChange={(e) => setSelectedBranch(e.target.value)}
+    >
+      {branches.map((branch) => (
+        <option key={branch} value={branch}>{branch}</option>
+      ))}
+    </select>
+  </div>
 
   useEffect(() => {
     // Simulate loading data
@@ -136,32 +189,99 @@ export default function AdminDashboard() {
               </div>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4">
-                  <a href="#" className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                  <a href="#" className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Settings</a>
+                  <button onClick={() => navigate('/admin/dashboard')} className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</button>
+                  <button onClick={() => navigate('/admin/settings')} className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Settings</button>
                 </div>
               </div>
             </div>
             <div className="hidden md:block">
               <div className="ml-4 flex items-center md:ml-6">
-                <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                <button 
+                  onClick={() => navigate('/admin/notifications')}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]">
                   <span className="sr-only">View notifications</span>
                   <Bell size={24} />
                 </button>
-                <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ml-3">
+                <button 
+                  onClick={() => navigate('/admin/search')}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Search</span>
                   <Search size={24} />
                 </button>
-                <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ml-3">
+                <button 
+                  onClick={() => navigate('/admin/settings')}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Settings</span>
                   <Settings size={24} />
                 </button>
-                <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ml-3">
+                <button 
+                  onClick={() => navigate('/admin/login')}
+                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Log out</span>
                   <LogOut size={24} />
                 </button>
               </div>
             </div>
+            <div className="-mr-2 flex md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
+          {/* Mobile menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <button
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-900 hover:bg-gray-50 w-full text-left"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => navigate('/admin/settings')}
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
+                >
+                  Settings
+                </button>
+              </div>
+              <div className="pt-4 pb-3 border-t border-gray-200">
+                <div className="flex items-center px-5">
+                  <div className="flex-shrink-0">
+                    <img className="h-10 w-10 rounded-full" src="/admin-avatar.png" alt="Admin" />
+                  </div>
+                  <div className="ml-3">
+                    <div className="text-base font-medium text-gray-800">Admin User</div>
+                    <div className="text-sm font-medium text-gray-500">admin@example.com</div>
+                  </div>
+                </div>
+                <div className="mt-3 px-2 space-y-1">
+                  <button
+                    onClick={() => navigate('/admin/notifications')}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
+                  >
+                    Notifications
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/search')}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
+                  >
+                    Search
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/login')}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 

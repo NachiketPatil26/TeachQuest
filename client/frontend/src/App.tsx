@@ -8,7 +8,9 @@ import TeacherDashboard from './components/dashboard/TeacherDashboard';
 import DutiesPage from './pages/teacher/DutiesPage';
 import RemunerationPage from './pages/teacher/RemunerationPage';
 import NotificationsPage from './pages/teacher/NotificationsPage';
-
+import ExamTimetable from './components/timetable/ExamTimetable';
+import TeacherAllocation from './components/allocation/TeacherAllocation';
+import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 function App() {
   return (
@@ -19,10 +21,26 @@ function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
         <Route path="/teacher/login" element={<TeacherLogin />} />
-        <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
-        <Route path="/teacher/duties" element={<DutiesPage />} />
-        <Route path="/teacher/remuneration" element={<RemunerationPage />} />
-        <Route path="/teacher/notifications" element={<NotificationsPage />} />
+
+        {/* Protected Admin Routes */}
+        <Route path="/admin" element={<ProtectedRoute role="admin" />}>
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="timetable/:branch" element={<ExamTimetable />} />
+          <Route path="allocation/:branch" element={<TeacherAllocation />} />
+          <Route path="duties/:branch" element={<div>Duties Page</div>} />
+          <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
+          <Route path="analytics/:branch" element={<div>Analytics Page</div>} />
+        </Route>
+
+        {/* Protected Teacher Routes */}
+        <Route path="/teacher" element={<ProtectedRoute role="teacher" />}>
+          <Route path="dashboard" element={<TeacherDashboard />} />
+          <Route path="duties" element={<DutiesPage />} />
+          <Route path="remuneration" element={<RemunerationPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+        </Route>
+
+        {/* Fallback Route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
