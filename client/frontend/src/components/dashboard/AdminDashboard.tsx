@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
+import {
   Users, 
   BarChart2, 
   Settings, 
@@ -14,7 +14,8 @@ import {
   Menu,
   X
 } from 'lucide-react';
-
+import LogoAdminDashboard from '../../assets/TeachQuestLogo.png';
+import AdminDashboardImage from '../../assets/Online test-bro.png';
 // CardSkeleton Component
 function CardSkeleton() {
   return (
@@ -40,32 +41,71 @@ function DashboardCard({ title, description, icon, onClick, bgColor }: { title: 
 }
 
 // New Stats Card Component
-function StatsCard({ title, value, trend }: { title: string; value: string; trend: number }) {
+interface StatsCardProps {
+  title: string;
+  value: number | string;
+  trend: number;
+  className?: string;
+}
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, className = "" }) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      <p className="text-2xl font-bold mt-2">{value}</p>
-      <div className={`flex items-center mt-2 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-        <span className="text-sm">{trend}% from last month</span>
-      </div>
+    <div className={`p-6 bg-white rounded-lg shadow-md ${className}`}>
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <p className="text-2xl font-bold">{value}</p>
+      
+      {/* Trend Display */}
+      <p className={`mt-2 text-sm font-medium ${
+        trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : "text-gray-500"
+      }`}>
+        {trend > 0 ? `▲ +${trend}` : trend < 0 ? `▼ ${trend}` : "—"}
+      </p>
     </div>
   );
-}
+};
+
+// function StatsCard({ title, value, trend }: { title: string; value: string; trend: number }) {
+//   return (
+//     <div className="bg-white p-6 rounded-lg shadow-md">
+//       <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+//       <p className="text-2xl font-bold mt-2">{value}</p>
+//       <div className={`flex items-center mt-2 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+//         <span className="text-sm">{trend}% from last month</span>
+//       </div>
+//     </div>
+//   );
+// }
+
+import {  useRef } from "react";
+// import { useNavigate } from "react-router-dom";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [branches, setBranches] = useState<string[]>(['Computer Science', 'Artificial Intelligence & Data Science', 'Information Technology']);
+  const [branches, setBranches] = useState<string[]>([
+    "Computer Science",
+    "Artificial Intelligence & Data Science",
+    "Information Technology",
+  ]);
   const [showAddBranch, setShowAddBranch] = useState(false);
-  const [newBranch, setNewBranch] = useState('');
-  const [selectedBranch, setSelectedBranch] = useState<string>('Computer Science');
+  const [newBranch, setNewBranch] = useState("");
+
+  const [selectedBranch, setSelectedBranch] = useState<string>("Computer Science");
+
+  // **Fix for input focus issue**
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus(); // Keep focus on the input field
+    }
+  }, [newBranch]); // Runs every time `newBranch` updates
 
   const handleAddBranch = () => {
     if (newBranch.trim() && !branches.includes(newBranch.trim())) {
       setBranches([...branches, newBranch.trim()]);
-      setNewBranch('');
+      setNewBranch("");
       setShowAddBranch(false);
     }
   };
@@ -87,6 +127,7 @@ export default function AdminDashboard() {
         <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
           <div className="flex gap-2">
             <input
+              ref={inputRef} // Attach ref to the input field
               type="text"
               value={newBranch}
               onChange={(e) => setNewBranch(e.target.value)}
@@ -107,7 +148,7 @@ export default function AdminDashboard() {
         <select
           id="branch"
           name="branch"
-          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] rounded-md shadow-sm"
+          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE] rounded-md shadow-sm appearance-none"  // **Fix applied here**
           value={selectedBranch}
           onChange={(e) => setSelectedBranch(e.target.value)}
         >
@@ -122,7 +163,8 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
-  )
+);
+
 
   useEffect(() => {
     // Simulate loading data
@@ -138,40 +180,45 @@ export default function AdminDashboard() {
       description: 'Upload and manage examination schedules',
       icon: <Calendar size={24} />,
       onClick: () => navigate(`/admin/timetable/${selectedBranch}`),
-      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAFx9A] '
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Teacher Allocation',
       description: 'Manage exam duty assignments',
       icon: <Users size={24} />,
-      onClick: () => navigate(`/admin/allocation/${selectedBranch}`)
+      onClick: () => navigate(`/admin/allocation/${selectedBranch}`),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Upload Excel Data',
       description: 'Import timetables and teacher data',
       icon: <Upload size={24} />,
-      onClick: () => document.getElementById('excelUpload')?.click()
+      onClick: () => document.getElementById('excelUpload')?.click(),
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Duty Reports',
       description: 'View and track teacher duties',
       icon: <ClipboardList size={24} />,
-      onClick: () => navigate(`/admin/duties/${selectedBranch}`)
+      onClick: () => navigate(`/admin/duties/${selectedBranch}`),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Remuneration',
       description: 'Manage payment and compensation',
       icon: <DollarSign size={24} />,
-      onClick: () => navigate(`/admin/remuneration/${selectedBranch}`)
+      onClick: () => navigate(`/admin/remuneration/${selectedBranch}`),
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Analytics',
       description: 'View duty statistics and insights',
       icon: <BarChart2 size={24} />,
-      onClick: () => navigate(`/admin/analytics/${selectedBranch}`)
+      onClick: () => navigate(`/admin/analytics/${selectedBranch}`),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     }
   ];
-
+  
   // Handle excel file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -196,17 +243,19 @@ export default function AdminDashboard() {
       <nav className="bg-white shadow-sm fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <img className="h-8 w-8" src="/logo.svg" alt="Logo" />
-              </div>
-              <div className="hidden md:block">
-                <div className="ml-10 flex items-baseline space-x-4">
-                  <button onClick={() => navigate('/admin/dashboard')} className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</button>
-                  <button onClick={() => navigate('/admin/settings')} className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Settings</button>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-center">
+          <div className="flex items-center space-x-2"> {/* Added flex and spacing */}
+          <img src={LogoAdminDashboard} className="h-8 w-8" alt="LogoAdminDashboard" />
+          <h1 className="text-xl font-bold text-gray-800">TeachQuest</h1>
+       </div>
+      <div className="hidden md:block">
+        <div className="ml-10 flex items-baseline space-x-4">
+          {/* <button onClick={() => navigate('/admin/dashboard')} className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</button> */}
+          {/* <button onClick={() => navigate('/admin/settings')} className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Settings</button> */}
+        </div>
+      </div>
+    </div>
+
             <div className="hidden md:block">
               <div className="ml-4 flex items-center md:ml-6">
                 <button 
@@ -302,19 +351,27 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, Admin</h1>
-          <p className="text-gray-600">
+          <div className="mb-8 flex items-center">
+            <img src={AdminDashboardImage} className="w-60 h-60" alt="Hero Section Image" />
+              <div className="ml-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Greetings, Admin</h1>
+            <p className="text-gray-600">
             {currentTime.toLocaleDateString('en-US', { 
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
             })}
-          </p>
+            </p>
+            <p className="text-gray-600">
+              {currentTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit',
+            minute: '2-digit'
+              })}
+            </p>
+          </div>
         </div>
-
+        </div>
         {/* Branch Selector */}
         <BranchSelector />
 
@@ -324,16 +381,19 @@ export default function AdminDashboard() {
             title="Total Active Teachers"
             value="124"
             trend={5}
+            className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
           />
           <StatsCard
             title="Pending Allocations"
             value="47"
             trend={-2}
+            className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
           />
           <StatsCard
             title="Total Duties This Month"
             value="256"
             trend={12}
+            className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
           />
         </div>
 

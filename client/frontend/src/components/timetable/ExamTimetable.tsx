@@ -4,7 +4,7 @@ import { Plus, Download } from 'lucide-react';
 import api from '../../services/api'; 
 import {  getExams, updateExam } from '../../services/api';
 import ExamDetailModal from '../timetable/ExamDetailModal';
-
+import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 interface Subject {
   id: string;
   name: string;
@@ -294,21 +294,36 @@ export default function ExamTimetable(): React.ReactElement {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between mb-8">
-          <div className=''>
-            <h2 className="text-2xl font-bold text-gray-900">Exam TimeTable</h2>
-            {examSlots.length > 0 && (
-              <div className="mt-4 flex md:mt-0 md:ml-4">
-                <button
-                  onClick={handleExportToExcel}
-                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
-                >
-                  <Download className="-ml-1 mr-2 h-5 w-5 " />
-                  Export to Excel
-                </button>
-              </div>
-            )}
-            <p className="mt-1 text-sm text-gray-500">{branch}</p>
-          </div>
+        <div className="relative">
+  {/* Fixed Navbar */}
+  <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center justify-between">
+  {/* Left Side: Logo and Title */}
+  <div className="flex items-center gap-3">
+    <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
+    <h1 className="text-3xl font-bold text-gray-900">Exam Timetable</h1>
+  </div>
+
+  {/* Right Side: Export Button */}
+  <button
+    onClick={handleExportToExcel}
+    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+  >
+    <Download className="-ml-1 mr-2 h-5 w-5" />
+    Export to Excel
+  </button>
+</div>
+
+  {/* Page Content with Padding to Avoid Overlap */}
+  <div className="mt-20">
+    {examSlots.length > 0 && (
+      <div className="mb-4">
+        
+      </div>
+    )}
+    <p className="text-sm text-gray-500">{branch}</p>
+  </div>
+</div>
+
         </div>
 
         {error && (

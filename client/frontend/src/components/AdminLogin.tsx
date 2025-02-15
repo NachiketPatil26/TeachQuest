@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-
+import AdminLoginImage from '../assets/AdminLogin.png';
 interface LoginFormData {
   email: string;
   password: string;
@@ -68,11 +68,7 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-[#9FC0AE] flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img
-            src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=200&h=200"
-            alt="Admin"
-            className="w-24 h-24 rounded-full"
-          />
+          <img src={AdminLoginImage}  alt="Admin Login" className="w-24 h-24 rounded-full" />
         </div>
         
         <h1 className="text-2xl font-bold text-center mb-8">Admin Login</h1>

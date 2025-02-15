@@ -14,7 +14,8 @@ import {
   FileText,
   MessageSquare
 } from 'lucide-react';
-
+import LogoTeacherDashboard from '../../assets/TeachQuestLogo.png';
+import TeacherDashboardImage from '../../assets/Teacher-pana.png';
 // CardSkeleton Component
 function CardSkeleton() {
   return (
@@ -38,19 +39,42 @@ function DashboardCard({ title, description, icon, onClick, bgColor }: { title: 
     </div>
   );
 }
+interface StatsCardProps {
+  title: string;
+  value: number | string;
+  trend: number;
+  className?: string;
+}
 
 // Stats Card Component
-function StatsCard({ title, value, trend }: { title: string; value: string; trend: number }) {
+const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, className = "" }) => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-      <p className="text-2xl font-bold mt-2">{value}</p>
-      <div className={`flex items-center mt-2 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-        <span className="text-sm">{trend}% from last month</span>
-      </div>
+    <div className={`p-6 bg-white rounded-lg shadow-md ${className}`}>
+      <h3 className="text-lg font-semibold">{title}</h3>
+      <p className="text-2xl font-bold">{value}</p>
+      
+      {/* Trend Display */}
+      <p className={`mt-2 text-sm font-medium ${
+        trend > 0 ? "text-green-600" : trend < 0 ? "text-red-600" : "text-gray-500"
+      }`}>
+        {trend > 0 ? `▲ +${trend}` : trend < 0 ? `▼ ${trend}` : "—"}
+      </p>
     </div>
   );
-}
+};
+
+
+// function StatsCard({ title, value, trend }: { title: string; value: string; trend: number }) {
+//   return (
+//     <div className="bg-white p-6 rounded-lg shadow-md">
+//       <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+//       <p className="text-2xl font-bold mt-2">{value}</p>
+//       <div className={`flex items-center mt-2 ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+//         <span className="text-sm">{trend}% from last month</span>
+//       </div>
+//     </div>
+//   );
+// }
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
@@ -73,40 +97,45 @@ export default function TeacherDashboard() {
       description: 'View your assigned examination duties',
       icon: <Calendar size={24} />,
       onClick: () => navigate('/teacher/duties'),
-      bgColor: 'bg-gradient-to-br from-[#9FC0AE] to-[#8BAF9A] text-white'
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Exam Schedule',
       description: 'Check examination timetables',
       icon: <Clock size={24} />,
-      onClick: () => navigate('/teacher/schedule')
+      onClick: () => navigate('/teacher/schedule'),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Submit Reports',
       description: 'Submit examination duty reports',
       icon: <FileText size={24} />,
-      onClick: () => navigate('/teacher/reports')
+      onClick: () => navigate('/teacher/reports'),
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Duty History',
       description: 'View past examination duties',
       icon: <ClipboardList size={24} />,
-      onClick: () => navigate('/teacher/history')
+      onClick: () => navigate('/teacher/history'),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Remuneration',
       description: 'Track payment and compensation',
       icon: <DollarSign size={24} />,
-      onClick: () => navigate('/teacher/remuneration')
+      onClick: () => navigate('/teacher/remuneration'),
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Support',
       description: 'Get help and contact admin',
       icon: <MessageSquare size={24} />,
-      onClick: () => navigate('/teacher/support')
+      onClick: () => navigate('/teacher/support'),
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     }
   ];
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
@@ -115,7 +144,7 @@ export default function TeacherDashboard() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <img className="h-8 w-8" src="/logo.svg" alt="Logo" />
+                <img className="h-8 w-8" src={LogoTeacherDashboard} alt="Logo" />
               </div>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4">
@@ -213,35 +242,51 @@ export default function TeacherDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back, {user?.name || 'Teacher'}</h1>
-          <p className="text-gray-600">
-            {currentTime.toLocaleDateString('en-US', { 
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </p>
-        </div>
-
+  <div className="mb-8 flex items-center">
+    <img src={TeacherDashboardImage} className="w-60 h-60" alt="Hero Section Image" />
+    <div className="ml-4">
+      <h1 className="text-2xl font-bold text-gray-900">Welcome back, {user?.name || 'Teacher'}</h1>
+      <p className="text-gray-600">
+        {currentTime.toLocaleDateString('en-US', { 
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </p>
+      <p className="text-gray-600">
+        {currentTime.toLocaleTimeString('en-US', { 
+          hour: '2-digit',
+          minute: '2-digit'
+        })}
+      </p>
+    </div>
+  </div>
+</div>
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatsCard
             title="Upcoming Duties"
             value="3"
             trend={0}
+              className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
           />
           <StatsCard
             title="Completed Duties"
             value="12"
             trend={8}
+              className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
           />
           <StatsCard
             title="Pending Reports"
             value="2"
             trend={-1}
+              
+            
+
+
+
+            
           />
         </div>
 
@@ -297,23 +342,25 @@ export default function TeacherDashboard() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-            Array(6).fill(null).map((_, index) => (
-              <CardSkeleton key={index} />
-            ))
-          ) : (
-            dashboardCards.map((card, index) => (
-              <DashboardCard
-                key={index}
-                title={card.title}
-                description={card.description}
-                icon={card.icon}
-                onClick={card.onClick}
-                bgColor={card.bgColor}
-              />
-            ))
-          )}
-        </div>
+  {loading ? (
+    Array(6).fill(null).map((_, index) => (
+      <CardSkeleton key={index} />
+    ))
+  ) : (
+    dashboardCards.map((card, index) => (
+      <DashboardCard
+        key={index}
+        title={card.title}
+        description={card.description}
+        icon={card.icon}
+        onClick={card.onClick}
+        bgColor={card.bgColor}
+        
+      />
+    ))
+  )}
+</div>
+
       </main>
     </div>
   );
