@@ -1,68 +1,88 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Download } from 'lucide-react';
-import api from '../../services/api';
-
+import api from '../../services/api'; 
+import {  getExams, updateExam } from '../../services/api';
+import ExamDetailModal from '../timetable/ExamDetailModal';
+import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 interface Subject {
   id: string;
   name: string;
 }
 
+
 interface ExamSlot {
-  id: string;
+  _id: string;
   subjectId: string;
+  subject: string;
   date: string;
   startTime: string;
   endTime: string;
   block: string;
+  blocks?: Block[];
+  allocatedTeachers: string[];
+  blockCapacity?: number;
 }
 
-export default function ExamTimetable() {
+interface Block {
+  number: number;
+  invigilator: string;
+  capacity: number;
+  location: string;
+  status: 'pending' | 'completed';
+  completedAt?: string;
+}
+
+export default function ExamTimetable(): React.ReactElement {
+  const navigate = useNavigate();
   const { branch } = useParams<{ branch: string }>();
+  const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
+
+  const [blocks] = useState(['A', 'B', 'C', 'D']);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedExam, setSelectedExam] = useState<ExamSlot | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // New state variables for subject management
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [newSubject, setNewSubject] = useState('');
-  const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
+  const [showAddSubject, setShowAddSubject] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState({ start: '', end: '' });
-  const [showAddSubject, setShowAddSubject] = useState(false);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError('');
-        const response = await api.get(`/api/exams/${branch}`).then(res => res.data);
-        const examData = response;
         
-        // Extract unique subjects from exam data
-        const uniqueSubjects = [...new Set(examData.map((exam: { subject: { name: string } }) => exam.subject.name))].map((name: unknown, index: number) => ({
-          id: index.toString(),
-          name: name as string
-        }));
-        setSubjects(uniqueSubjects);
+        // Fetch teachers using API service
         
-        // Set exam slots
-        setExamSlots(examData.map((exam: { _id: string; subject: { name: string }; date: string; startTime: string; endTime: string; block?: string }) => ({
-          id: exam._id,
-          subjectId: exam.subject.name,
-          date: new Date(exam.date).toISOString().split('T')[0],
-          startTime: exam.startTime,
-          endTime: exam.endTime,
-          block: exam.block || 'TBD'
-        })));
-      } catch (err) {
-        const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to fetch exam data. Please check your connection and try again.';
-        setError(errorMessage);
-        console.error('Error fetching exam data:', err);
+
+        // Fetch exam slots using API service
+        if (branch) {
+          const examsData = await getExams(branch);
+          setExamSlots(examsData);
+          
+          // Extract unique subjects from exam data
+          const uniqueSubjects = [...new Set(examsData.map((exam: ExamSlot) => exam.subject))]
+            .map((value: unknown) => ({
+              id: String(value),
+              name: String(value)
+            }));
+          setSubjects(uniqueSubjects);
+        }
+
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, [branch]);
 
@@ -75,7 +95,6 @@ export default function ExamTimetable() {
           name: newSubject.trim()
         };
         
-        // Add subject to local state
         setSubjects([...subjects, newSubjectItem]);
         setNewSubject('');
         setShowAddSubject(false);
@@ -90,27 +109,42 @@ export default function ExamTimetable() {
     if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end) {
       try {
         setError('');
+        const subjectName = subjects.find(s => s.id === selectedSubject)?.name;
+        if (!subjectName) {
+          setError('Invalid subject selected');
+          return;
+        }
+
+        const initialBlocks: Block[] = blocks.map((_blockLetter, index) => ({
+          number: index,
+          invigilator: '',
+          capacity: 0,
+          location: '',
+          status: 'pending'
+        }));
+
         const response = await api.post('/api/exams', {
           branch,
-          subject: {
-            name: subjects.find(s => s.id === selectedSubject)?.name
-          },
-          date: selectedDate,
-          startTime: selectedTime.start,
-          endTime: selectedTime.end
-        });
-
-        const newSlot: ExamSlot = {
-          id: response.data._id,
-          subjectId: selectedSubject,
+          subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
           endTime: selectedTime.end,
-          block: 'TBD'
+          blocks: initialBlocks
+        });
+    
+        const newSlot: ExamSlot = {
+          _id: response.data._id,
+          subjectId: selectedSubject,
+          subject: subjectName,
+          date: selectedDate,
+          startTime: selectedTime.start,
+          endTime: selectedTime.end,
+          block: 'A',
+          blocks: initialBlocks,
+          allocatedTeachers: []
         };
         
         setExamSlots([...examSlots, newSlot]);
-        // Reset form
         setSelectedDate('');
         setSelectedSubject('');
         setSelectedTime({ start: '', end: '' });
@@ -144,174 +178,383 @@ export default function ExamTimetable() {
     }
   };
 
+  const handleExamClick = (exam: ExamSlot) => {
+    setSelectedExam(exam);
+    setIsModalOpen(true);
+  };
+
+  const handleUpdateBlock = async (blockNumber: number, blockData: Partial<Block>) => {
+    if (!selectedExam) return;
+  
+    try {
+      // Validate block data
+      if (blockData.capacity !== undefined && blockData.capacity < 0) {
+        setError('Capacity cannot be negative');
+        return;
+      }
+  
+      if (blockData.status && !['pending', 'in_progress', 'completed'].includes(blockData.status)) {
+        setError('Invalid block status');
+        return;
+      }
+  
+      // Update block data
+      const response = await api.patch(`/api/exams/${selectedExam._id}/blocks/${blockNumber}`, blockData);
+      if (response.data) {
+        const updatedExam = {
+          ...selectedExam,
+          blocks: response.data.blocks
+        };
+        setSelectedExam(updatedExam);
+        
+        // Update exam slots with new block data
+        setExamSlots(examSlots.map(slot =>
+          slot._id === updatedExam._id ? { ...slot, blocks: updatedExam.blocks } : slot
+        ));
+  
+        // Check if all blocks are properly configured
+        const allBlocksConfigured = updatedExam.blocks?.every((block: Block) => 
+          block.capacity > 0 && block.location && block.status
+        );
+  
+        if (allBlocksConfigured) {
+          setAllExamsHaveBlocks(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error updating block:', error);
+      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+      setError(errorMessage || 'An error occurred while updating the block');
+    }
+  };
+
+  const handleBlockAssignment = async (slotId: string, block: string) => {
+    try {
+      // Define the update data with proper typing
+      const updateData: { blockAssignment: string } = {
+        blockAssignment: block
+      };
+      
+      await updateExam(slotId, { block: updateData.blockAssignment });
+
+      setExamSlots(slots =>
+        slots.map(slot =>
+          slot._id === slotId ? { ...slot, block } : slot
+        )
+      );
+    } catch (error) {
+      console.error('Error updating block:', error);
+      setError('Failed to update block assignment');
+    }
+  };
+
+  const [allExamsHaveBlocks, setAllExamsHaveBlocks] = useState(false);
+
+  useEffect(() => {
+    // Check if all exams have blocks assigned
+    const checkExamBlocks = () => {
+      const allHaveBlocks = examSlots.every(slot => 
+        slot.blocks && slot.blocks.length > 0 && slot.blocks.every(block => 
+          block.number >= 0 &&
+          block.capacity > 0 &&
+          block.location.trim() !== '' &&
+          block.invigilator &&
+          (block.status === 'pending' || block.status === 'completed')
+        )
+      );
+      setAllExamsHaveBlocks(allHaveBlocks);
+    };
+
+    checkExamBlocks();
+  }, [examSlots]);
+
+
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9FC0AE]"></div>
+      </div>
+    );
+  }
+
+  const handleDeleteExamSlot = async (slotId: string) => {
+    try {
+      setError('');
+      await api.delete(`/api/exams/${slotId}`);
+      setExamSlots(examSlots.filter(slot => slot._id !== slotId));
+    } catch (err) {
+      const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to delete exam slot';
+      setError(errorMessage);
+      console.error('Error deleting exam slot:', err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {loading ? (
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9FC0AE]"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div className="md:flex md:items-center md:justify-between mb-8">
+        <div className="relative">
+  {/* Fixed Navbar */}
+  <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center justify-between">
+  {/* Left Side: Logo and Title */}
+  <div className="flex items-center gap-3">
+    <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
+    <h1 className="text-3xl font-bold text-gray-900">Exam Timetable</h1>
+  </div>
+
+  {/* Right Side: Export Button */}
+  <button
+    onClick={handleExportToExcel}
+    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+  >
+    <Download className="-ml-1 mr-2 h-5 w-5" />
+    Export to Excel
+  </button>
+</div>
+
+  {/* Page Content with Padding to Avoid Overlap */}
+  <div className="mt-20">
+    {examSlots.length > 0 && (
+      <div className="mb-4">
+        
+      </div>
+    )}
+    <p className="text-sm text-gray-500">{branch}</p>
+  </div>
+</div>
+
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
             <strong className="font-bold">Error: </strong>
             <span className="block sm:inline">{error}</span>
           </div>
-        ) : (
-          <>
-            <div className="md:flex md:items-center md:justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900">Exam Timetable</h2>
-                <p className="mt-1 text-sm text-gray-500">{branch}</p>
-              </div>
-              <div className="mt-4 flex md:mt-0 md:ml-4">
-                <button
-                  onClick={handleExportToExcel}
-                  className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
-                >
-                  <Download className="-ml-1 mr-2 h-5 w-5" />
-                  Export to Excel
-                </button>
-              </div>
-            </div>
+        )}
 
-            {/* Subject Management */}
-            <div className="bg-white shadow rounded-lg p-6 mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">Subjects</h3>
+        {/* Subject Management */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Subjects</h3>
+              <p className="mt-1 text-sm text-gray-500">Manage examination subjects</p>
+            </div>
+            <button
+              onClick={() => setShowAddSubject(!showAddSubject)}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+            >
+              <Plus className="-ml-1 mr-2 h-5 w-5" />
+              Add Subject
+            </button>
+          </div>
+
+          {showAddSubject && (
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  placeholder="Enter subject name"
+                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE] text-sm"
+                />
                 <button
-                  onClick={() => setShowAddSubject(!showAddSubject)}
-                  className="inline-flex items-center text-sm text-[#9FC0AE] hover:text-[#8BAF9A]"
+                  onClick={handleAddSubject}
+                  className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] shadow-sm font-medium"
                 >
-                  <Plus className="h-5 w-5 mr-1" />
                   Add Subject
                 </button>
               </div>
-
-              {showAddSubject && (
-                <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    placeholder="Enter subject name"
-                    className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                  />
-                  <button
-                    onClick={handleAddSubject}
-                    className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A]"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {subjects.map((subject) => (
-                  <div
-                    key={subject.id}
-                    className="p-3 bg-gray-50 rounded-md flex items-center justify-between"
-                  >
-                    <span>{subject.name}</span>
-                  </div>
-                ))}
-              </div>
             </div>
+          )}
 
-            {/* Exam Slot Scheduling */}
-            <div className="bg-white shadow rounded-lg p-6 mb-8">
-              <h3 className="text-lg font-medium mb-4">Schedule Exam</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Date</label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Subject</label>
-                  <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                  >
-                    <option value="">Select a subject</option>
-                    {subjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Start Time</label>
-                  <input
-                    type="time"
-                    value={selectedTime.start}
-                    onChange={(e) => setSelectedTime({ ...selectedTime, start: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">End Time</label>
-                  <input
-                    type="time"
-                    value={selectedTime.end}
-                    onChange={(e) => setSelectedTime({ ...selectedTime, end: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <button
-                  onClick={handleAddExamSlot}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A]"
+          {subjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {subjects.map((subject) => (
+                <div
+                  key={subject.id}
+                  className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-[#9FC0AE] transition-colors duration-200"
                 >
-                  <Plus className="-ml-1 mr-2 h-5 w-5" />
-                  Add Exam Slot
-                </button>
-              </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-medium text-gray-900">{subject.name}</span>
+                      <p className="text-sm text-gray-500 mt-1">Click to edit</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <Plus className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No subjects</h3>
+              <p className="mt-1 text-sm text-gray-500">Get started by adding a new subject</p>
+            </div>
+          )}
+        </div>
+
+        {/* Exam Slot Scheduling */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-medium mb-4">Schedule Exam</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+              />
             </div>
 
-            {/* Scheduled Exams */}
-            <div className="bg-white shadow rounded-lg p-6">
-              <h3 className="text-lg font-medium mb-4">Scheduled Exams</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {examSlots.map((slot) => (
-                      <tr key={slot.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">{slot.date}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {subjects.find(s => s.id === slot.subjectId)?.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {slot.startTime} - {slot.endTime}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{slot.block}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Subject</label>
+              <select
+                value={selectedSubject}
+                onChange={(e) => setSelectedSubject(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+              >
+                <option value="">Select a subject</option>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Start Time</label>
+              <input
+                type="time"
+                value={selectedTime.start}
+                onChange={(e) => setSelectedTime({ ...selectedTime, start: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">End Time</label>
+              <input
+                type="time"
+                value={selectedTime.end}
+                onChange={(e) => setSelectedTime({ ...selectedTime, end: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+              />
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <button
+              onClick={handleAddExamSlot}
+              disabled={!selectedSubject || !selectedDate || !selectedTime.start || !selectedTime.end}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="-ml-1 mr-2 h-5 w-5" />
+              Add Exam Slot
+            </button>
+          </div>
+        </div>
+
+        {/* Exam Slots */}
+        <div className="bg-white shadow rounded-lg p-6 mb-8">
+          <h3 className="text-lg font-medium mb-4">Exam Slots</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teachers</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {examSlots.map((slot) => (
+                  <tr key={slot._id}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {new Date(slot.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">{slot.subject}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {slot.startTime} - {slot.endTime}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <select
+                        value={slot.block}
+                        onChange={(e) => handleBlockAssignment(slot._id, e.target.value)}
+                        className="rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+                      >
+                        {blocks.map((block) => (
+                          <option key={block} value={block}>Block {block}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {slot.allocatedTeachers?.length || 0} allocated
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex space-x-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleExamClick(slot);
+                          }}
+                          className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to delete this exam slot?')) {
+                              handleDeleteExamSlot(slot._id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Navigation to Teacher Allocation */}
+        {examSlots.length > 0 && (
+          <div className="flex justify-end mb-8">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/admin/allocation/${branch}`);
+              }}
+              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+            >
+              Proceed to Teacher Allocation
+            </button>
+          </div>
         )}
+
       </div>
+      {selectedExam && (
+        <ExamDetailModal
+          exam={selectedExam}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onUpdateBlock={handleUpdateBlock}
+        />
+      )}
     </div>
   );
 }

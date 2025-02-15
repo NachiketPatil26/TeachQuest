@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
-
+import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import TeacherLoginImage from '../assets/TeacherLoginImage.png';
 interface LoginFormData {
   email: string;
   password: string;
 }
 
 export default function TeacherLogin() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [loginError, setLoginError] = useState('');
 
   const validateForm = () => {
     const newErrors: Partial<LoginFormData> = {};
@@ -33,11 +38,21 @@ export default function TeacherLogin() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
+    
     if (validateForm()) {
-      // Handle login logic here
-      console.log('Form submitted:', formData);
+      const result = await login({
+        ...formData,
+        role: 'teacher'
+      });
+
+      if (result.success) {
+        navigate('/teacher/dashboard');
+      } else {
+        setLoginError(result.error || 'Login failed');
+      }
     }
   };
 
@@ -47,22 +62,20 @@ export default function TeacherLogin() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name as keyof LoginFormData]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
+    setLoginError('');
   };
 
   return (
     <div className="min-h-screen bg-[#9FC0AE] flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img
-            src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=200&h=200"
-            alt="Teacher"
+          <img src={TeacherLoginImage}            alt="Teacher"
             className="w-24 h-24 rounded-full"
           />
         </div>
@@ -116,6 +129,10 @@ export default function TeacherLogin() {
               <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
+
+          {loginError && (
+            <p className="text-red-500 text-sm text-center">{loginError}</p>
+          )}
 
           <button
             type="submit"

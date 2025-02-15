@@ -6,13 +6,14 @@ import {
   updateExam,
   deleteExam,
   assignInvigilator,
-  completeBlock
+  completeBlock,
+  updateExamBlock
 } from '../controllers/examController';
 import { protect, adminOnly as admin } from '../middleware/auth';
 
 const router = express.Router();
 
-router.route('/')
+router.route('/:branch')
   .get(protect as unknown as express.RequestHandler, async (req, res, next) => {
     await getExams(req, res);
   })
@@ -39,6 +40,11 @@ router.route('/:id/blocks/:blockNumber/invigilator')
 router.route('/:id/blocks/:blockNumber/complete')
   .put(protect as unknown as express.RequestHandler, async (req, res, next) => {
     await completeBlock(req, res);
+  });
+
+router.route('/:id/blocks/:blockNumber')
+  .patch(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await updateExamBlock(req, res);
   });
 
 export default router;
