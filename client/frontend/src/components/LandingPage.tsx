@@ -190,7 +190,6 @@ export default function LandingPage() {
             Effortless Scheduling
             <br />
             and
-            <br />
             Supervision
           </h1>
           <div className="space-x-4">
