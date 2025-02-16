@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Check, AlertCircle } from 'lucide-react';
-import { getTeachers, getExams, allocateTeachers } from '../../services/api';
+// import React, { useState, useEffect } from 'react';
+// import { useParams } from 'react-router-dom';
+// import { Check, AlertCircle } from 'lucide-react';
+// import { getTeachers, getExams, allocateTeachers } from '../../services/api';
+// <<<<<<< HEAD
 
+// =======
+import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
+>>>>>>> 86f3823 (trial of git)
 interface Teacher {
   _id: string;
   name: string;
@@ -286,12 +290,29 @@ export default function TeacherAllocation() {
             </div>
           </div>
         )}
+<<<<<<< HEAD
         <div className="md:flex md:items-center md:justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Teacher Allocation</h2>
             <p className="mt-1 text-sm text-gray-500">{branch}</p>
           </div>
         </div>
+=======
+       <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center gap-3">
+  {/* TeachQuest Logo */}
+  <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
+
+  {/* Navbar Heading */}
+  <h1 className="text-2xl font-bold text-gray-900">Teacher Allocation</h1>
+</div>
+
+{/* Page Content (Add padding to prevent overlap with fixed navbar) */}
+<div className="pt-20 md:flex md:items-center md:justify-between mb-8">
+  <div>
+    <h2 className="text-2xl font-bold text-gray-900">{branch}</h2>
+  </div>
+</div>
+>>>>>>> 86f3823 (trial of git)
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-8" role="alert">
