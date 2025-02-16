@@ -186,7 +186,7 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 flex items-center justify-between animate-on-scroll">
         <div className="max-w-lg">
-          <h1 className="text-4xl font-bold mb-4">
+          <h1 className="text-5xl font-bold mb-4">
             Effortless Scheduling
             <br />
             and
@@ -196,13 +196,13 @@ export default function LandingPage() {
           <div className="space-x-4">
             <button 
               onClick={() => navigate('/teacher/login')}
-              className="bg-[#9FC0AE] text-white px-6 py-2 rounded hover:bg-[#8BAF9A] transition-colors"
+              className="bg-[#9FC0AE] text-white px-6 py-3 rounded hover:bg-[#8BAF9A] transition-colors"
             >
               Teacher
             </button>
             <button 
               onClick={() => navigate('/admin/login')}
-              className="bg-[#9FC0AE] text-white px-6 py-2 rounded hover:bg-[#8BAF9A] transition-colors"
+              className="bg-[#9FC0AE] text-white px-6 py-3 rounded hover:bg-[#8BAF9A] transition-colors"
             >
               Admin
             </button>
