@@ -3,11 +3,9 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// <<<<<<< HEAD
-// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/teachquest';
-// =======
-const MONGODB_URI = "mongodb+srv://nachiketpa26:jsm@cluster1.yrefb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1";
->>>>>>> 86f3823 (trial of git)
+
+const MONGODB_URI = "mongodb+srv://nachiketpa26:jsm@cluster1.yrefb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1" || process.env.MONGODB_URI;
+
 
 export const connectDB = async () => {
   try {
