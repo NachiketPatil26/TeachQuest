@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 
-const MONGODB_URI = "mongodb+srv://nachiketpa26:jsm@cluster1.yrefb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1" || process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI;
 
 
 export const connectDB = async () => {
