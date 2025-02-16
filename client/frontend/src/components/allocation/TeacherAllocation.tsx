@@ -1,12 +1,10 @@
-// import React, { useState, useEffect } from 'react';
-// import { useParams } from 'react-router-dom';
-// import { Check, AlertCircle } from 'lucide-react';
-// import { getTeachers, getExams, allocateTeachers } from '../../services/api';
-// <<<<<<< HEAD
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { Check, AlertCircle } from 'lucide-react';
+import { getTeachers, getExams, allocateTeachers } from '../../services/api';
 
-// =======
 import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
->>>>>>> 86f3823 (trial of git)
+
 interface Teacher {
   _id: string;
   name: string;
