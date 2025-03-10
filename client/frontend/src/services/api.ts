@@ -68,9 +68,13 @@ export const login = async (email: string, password: string, role: 'admin' | 'te
 };
 
 // Exam APIs
-export const getExams = async (branch: string) => {
+export const getExams = async (branch: string, semester?: string) => {
   try {
-    const response = await api.get(`/api/exams/${encodeURIComponent(branch)}`);
+    let url = `/api/exams/${encodeURIComponent(branch)}`;
+    if (semester) {
+      url += `?semester=${encodeURIComponent(semester)}`;
+    }
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
