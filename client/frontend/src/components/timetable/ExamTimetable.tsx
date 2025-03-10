@@ -35,8 +35,9 @@ interface Block {
 
 export default function ExamTimetable(): React.ReactElement {
   const navigate = useNavigate();
-  const { branch } = useParams<{ branch: string }>();
+  const { branch, semester } = useParams<{ branch: string; semester: string }>();
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
+  const [, setCurrentSemester] = useState<string>(semester || '');
 
   const [blocks] = useState(['A', 'B', 'C', 'D']);
   const [loading, setLoading] = useState(true);
@@ -62,9 +63,11 @@ export default function ExamTimetable(): React.ReactElement {
         
 
         // Fetch exam slots using API service
-        if (branch) {
-          const examsData = await getExams(branch);
+        if (branch && semester) {
+          // Modified to include semester parameter
+          const examsData = await getExams(branch, semester);
           setExamSlots(examsData);
+          setCurrentSemester(semester);
           
           // Extract unique subjects from exam data
           const uniqueSubjects = [...new Set(examsData.map((exam: ExamSlot) => exam.subject))]
@@ -105,6 +108,17 @@ export default function ExamTimetable(): React.ReactElement {
     }
   };
 
+  // Function to check for scheduling conflicts
+  const checkForSchedulingConflicts = (date: string, startTime: string, endTime: string): boolean => {
+    return examSlots.some(slot => 
+      slot.date === date && (
+        (startTime >= slot.startTime && startTime < slot.endTime) ||
+        (endTime > slot.startTime && endTime <= slot.endTime) ||
+        (startTime <= slot.startTime && endTime >= slot.endTime)
+      )
+    );
+  };
+
   const handleAddExamSlot = async () => {
     if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end) {
       try {
@@ -112,6 +126,12 @@ export default function ExamTimetable(): React.ReactElement {
         const subjectName = subjects.find(s => s.id === selectedSubject)?.name;
         if (!subjectName) {
           setError('Invalid subject selected');
+          return;
+        }
+
+        // Check for scheduling conflicts
+        if (checkForSchedulingConflicts(selectedDate, selectedTime.start, selectedTime.end)) {
+          setError('Scheduling conflict detected! There is already an exam scheduled during this time slot.');
           return;
         }
 
@@ -125,6 +145,7 @@ export default function ExamTimetable(): React.ReactElement {
 
         const response = await api.post('/api/exams', {
           branch,
+          semester,
           subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
@@ -248,7 +269,7 @@ export default function ExamTimetable(): React.ReactElement {
     }
   };
 
-  const [allExamsHaveBlocks, setAllExamsHaveBlocks] = useState(false);
+  const [, setAllExamsHaveBlocks] = useState(false);
 
   useEffect(() => {
     // Check if all exams have blocks assigned
@@ -537,7 +558,7 @@ export default function ExamTimetable(): React.ReactElement {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/admin/allocation/${branch}`);
+                navigate(`/admin/allocation/${branch}/${semester}`);
               }}
               className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
             >

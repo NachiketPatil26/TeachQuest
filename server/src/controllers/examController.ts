@@ -12,10 +12,14 @@ interface ExamRequest extends Request {
 
 export const createExam = async (req: Request, res: Response) => {
   try {
-    const { branch, subject, date, startTime, endTime } = req.body;
+    const { branch, semester, subject, date, startTime, endTime } = req.body;
     
-    if (!branch || !subject || !date || !startTime || !endTime) {
+    if (!branch || !semester || !subject || !date || !startTime || !endTime) {
       return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (semester < 1 || semester > 8) {
+      return res.status(400).json({ message: 'Semester must be between 1 and 8' });
     }
 
     // Ensure subject is a string and handle subject object
@@ -43,6 +47,7 @@ export const createExam = async (req: Request, res: Response) => {
 
       const exam = await Exam.create({
         branch,
+        semester,
         subject: subjectString,
         date,
         startTime,
@@ -65,18 +70,32 @@ export const createExam = async (req: Request, res: Response) => {
 export const getExams = async (req: Request, res: Response) => {
   try {
     const { branch } = req.params;
+    const { semester } = req.query;
+    
     if (!branch) {
       return res.status(400).json({ message: 'Branch parameter is required' });
     }
 
     const decodedBranch = decodeURIComponent(branch);
-    console.log('Fetching exams for branch:', decodedBranch);
+    console.log('Fetching exams for branch:', decodedBranch, 'semester:', semester);
 
-    const exams = await Exam.find({ branch: decodedBranch })
+    // Build query object
+    const query: any = { branch: decodedBranch };
+    
+    // Add semester to query if provided
+    if (semester) {
+      const semesterNum = parseInt(semester as string, 10);
+      if (isNaN(semesterNum) || semesterNum < 1 || semesterNum > 8) {
+        return res.status(400).json({ message: 'Invalid semester value' });
+      }
+      query.semester = semesterNum;
+    }
+
+    const exams = await Exam.find(query)
       .populate('allocatedTeachers', 'name email')
       .sort({ date: 1, startTime: 1 });
 
-    console.log(`Found ${exams.length} exams for branch ${decodedBranch}`);
+    console.log(`Found ${exams.length} exams for branch ${decodedBranch}${semester ? ` and semester ${semester}` : ''}`);
     res.json(exams);
   } catch (error) {
     console.error('Get exams error:', error);
@@ -88,11 +107,22 @@ export const getExams = async (req: Request, res: Response) => {
 export const getExamsByBranch = async (req: Request, res: Response) => {
   try {
     const { branch } = req.params;
+    const { semester } = req.query;
+    
     if (!branch) {
       return res.status(400).json({ message: 'Branch parameter is required' });
     }
 
-    const exams = await Exam.find({ branch })
+    const query: any = { branch };
+    if (semester) {
+      const semesterNum = parseInt(semester as string, 10);
+      if (isNaN(semesterNum) || semesterNum < 1 || semesterNum > 8) {
+        return res.status(400).json({ message: 'Invalid semester value' });
+      }
+      query.semester = semesterNum;
+    }
+
+    const exams = await Exam.find(query)
       .populate('allocatedTeachers', 'name email')
       .sort({ date: 1, startTime: 1 });
 

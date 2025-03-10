@@ -10,6 +10,7 @@ import NotificationsPage from './pages/teacher/NotificationsPage';
 import SchedulePage from './pages/teacher/SchedulePage';
 import ReportsPage from './pages/teacher/ReportsPage';
 import ExamTimetable from './components/timetable/ExamTimetable';
+import SemesterSelection from './components/timetable/SemesterSelection';
 import TeacherAllocation from './components/allocation/TeacherAllocation';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
@@ -27,8 +28,9 @@ function App() {
           {/* Protected Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute role="admin" />}>
             <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="timetable/:branch" element={<ExamTimetable />} />
-            <Route path="allocation/:branch" element={<TeacherAllocation />} />
+            <Route path="timetable/:branch" element={<SemesterSelection />} />
+            <Route path="timetable/:branch/:semester" element={<ExamTimetable />} />
+            <Route path="allocation/:branch/:semester" element={<TeacherAllocation />} />
             <Route path="duties/:branch" element={<div>Duties Page</div>} />
             <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
             <Route path="analytics/:branch" element={<div>Analytics Page</div>} />
