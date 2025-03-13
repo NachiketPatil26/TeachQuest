@@ -215,15 +215,9 @@ export default function AdminDashboard() {
       description: 'Manage payment and compensation',
       icon: <DollarSign size={24} />,
       onClick: () => navigate(`/admin/remuneration/${selectedBranch}`),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Analytics',
-      description: 'View duty statistics and insights',
-      icon: <BarChart2 size={24} />,
-      onClick: () => navigate(`/admin/analytics/${selectedBranch}`),
       bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    }
+    },
+  
   ];
   
   // Handle excel file upload

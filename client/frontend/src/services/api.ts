@@ -3,18 +3,15 @@ import axios, { AxiosError } from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface ExamData {
-  title?: string;
-  description?: string;
+  examName: string;
+  branch: string;
+  semester: number;
+  subject: string;
   date: string;
-  branch?: string;
-  duration?: number;
-  totalMarks?: number;
-  createdBy?: string;
-  block?: string;
-  subject?: string;
-  startTime?: string;
-  endTime?: string;
+  startTime: string;
+  endTime: string;
   allocatedTeachers?: string[];
+  status?: 'scheduled' | 'in-progress' | 'completed';
 }
 
 interface TeacherData {
@@ -68,19 +65,19 @@ export const login = async (email: string, password: string, role: 'admin' | 'te
 };
 
 // Exam APIs
-export const getExams = async (branch: string, semester?: string) => {
+export const getExams = async (branch: string, semester?: number, examName?: string) => {
   try {
-    let url = `/api/exams/${encodeURIComponent(branch)}`;
-    if (semester) {
-      url += `?semester=${encodeURIComponent(semester)}`;
-    }
-    const response = await api.get(url);
+    const params = new URLSearchParams();
+    if (semester) params.append('semester', semester.toString());
+    if (examName) params.append('examName', examName);
+    
+    const response = await api.get(`/api/exams/${encodeURIComponent(branch)}?${params.toString()}`);
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
-    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response.data || {}) 
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {}) 
       ? (err.response.data as { message: string }).message 
-      : 'Failed to fetch exam data. Please check your connection and try again.');
+      : 'Failed to fetch exams');
   }
 };
 

@@ -26,7 +26,7 @@ export default function SemesterSelection() {
     // Set loading state to true before navigation
     setLoading(true);
     
-    // Navigate to the ExamTimetable page with branch and semester parameters
+    // Navigate to the ExamNameSelection page with branch and semester parameters
     navigate(`/admin/timetable/${branch}/${selectedSemester}`);
   };
 
