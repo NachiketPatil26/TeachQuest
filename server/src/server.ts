@@ -5,11 +5,10 @@ import * as dotenv from 'dotenv';
 import { connectDB } from './config/db';
 import { protect, adminOnly, teacherOnly } from './middleware/auth';
 import * as userController from './controllers/userController';
-import * as examController from './controllers/examController';
 import * as notificationController from './controllers/notificationController';
 import * as branchController from './controllers/branchController';
+import examRoutes from './routes/examRoutes';
 import User from './models/User';
-import teacherRoutes from './routes/teacherRoutes';
 
 // Error handling interface
 interface ErrorWithStatus extends Error {
@@ -51,7 +50,7 @@ app.use((req: express.Request, res: express.Response, next: express.NextFunction
   next();
 });
 
-// Auth Routes
+
 // Auth Routes
 app.post('/api/users/login', userController.loginUser as unknown as express.RequestHandler);
 app.post('/api/users/register', userController.registerUser as express.RequestHandler);
@@ -68,11 +67,7 @@ app.get('/api/users/teachers', protect as unknown as express.RequestHandler, use
 app.use('/api/admin', protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler);
 
 // Exam Routes
-app.post('/api/exams', examController.createExam as unknown as express.RequestHandler);
-app.get('/api/exams/:branch', examController.getExamsByBranch as unknown as express.RequestHandler);
-app.put('/api/exams/:id', examController.updateExam as unknown as express.RequestHandler);
-app.delete('/api/exams/:id', examController.deleteExam as unknown as express.RequestHandler);
-app.post('/api/exams/:id/allocate', examController.allocateTeachers as unknown as express.RequestHandler);
+app.use('/api/exams', examRoutes);
 
 // Branch Routes
 app.get('/api/branches', protect as unknown as express.RequestHandler, async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
@@ -120,8 +115,6 @@ app.delete('/api/branches/:id/teachers', protect as unknown as express.RequestHa
 
 // Teacher Routes
 app.use('/api/teacher', protect as unknown as express.RequestHandler, teacherOnly as express.RequestHandler);
-app.get('/api/exams/:branch', (examController.getExams as unknown as express.RequestHandler));
-app.post('/api/exams/:id/blocks/:blockNumber/complete', (examController.completeBlock as unknown as express.RequestHandler));
 app.get('/api/notifications', (notificationController.getUserNotifications as unknown as express.RequestHandler));
 app.put('/api/notifications/:id/read', (notificationController.markAsRead as unknown as express.RequestHandler));
 app.get('/api/remuneration', (async (req: express.Request, res: express.Response) => {

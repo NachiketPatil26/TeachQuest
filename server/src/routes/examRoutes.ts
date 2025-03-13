@@ -6,9 +6,10 @@ import {
   updateExam,
   deleteExam,
   assignInvigilator,
-  completeBlock,
   updateExamBlock,
-  allocateTeachers
+  allocateTeachers,
+  addBlock,
+  deleteBlock
 } from '../controllers/examController';
 import { protect, adminOnly as admin } from '../middleware/auth';
 
@@ -38,19 +39,22 @@ router.route('/:id/allocate')
     await allocateTeachers(req, res);
   });
 
+router.route('/:id/blocks')
+  .post(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await addBlock(req, res);
+  });
+
 router.route('/:id/blocks/:blockNumber/invigilator')
   .post(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
     await assignInvigilator(req, res);
   });
 
-router.route('/:id/blocks/:blockNumber/complete')
-  .put(protect as unknown as express.RequestHandler, async (req, res, next) => {
-    await completeBlock(req, res);
-  });
-
 router.route('/:id/blocks/:blockNumber')
   .patch(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
     await updateExamBlock(req, res);
+  })
+  .delete(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await deleteBlock(req, res);
   });
 
 export default router;

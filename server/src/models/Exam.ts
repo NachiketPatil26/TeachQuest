@@ -5,7 +5,6 @@ interface IBlock {
   invigilator: mongoose.Types.ObjectId;
   capacity: number;
   location: string;
-  status: 'pending' | 'completed';
   completedAt?: Date;
 }
 
@@ -31,7 +30,7 @@ const blockSchema = new mongoose.Schema<IBlock>({
   invigilator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
   },
   capacity: {
     type: Number,
@@ -42,11 +41,7 @@ const blockSchema = new mongoose.Schema<IBlock>({
     type: String,
     default: '',
   },
-  status: {
-    type: String,
-    enum: ['pending', 'completed'],
-    default: 'pending',
-  },
+ 
   completedAt: {
     type: Date,
   },

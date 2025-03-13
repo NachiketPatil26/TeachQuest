@@ -12,6 +12,13 @@ interface ExamData {
   endTime: string;
   allocatedTeachers?: string[];
   status?: 'scheduled' | 'in-progress' | 'completed';
+  blocks?: Array<{
+    number: number;
+    capacity: number;
+    location: string;
+    status: 'pending' | 'in_progress' | 'completed';
+    invigilator?: string | null;
+  }>;
 }
 
 interface TeacherData {
@@ -30,6 +37,13 @@ interface BranchData {
     semester: number;
   }>;
   active?: boolean;
+}
+
+interface Block {
+  number: number;
+  capacity: number;
+  location: string;
+  invigilator?: string | null;
 }
 
 const api = axios.create({
@@ -81,9 +95,21 @@ export const getExams = async (branch: string, semester?: number, examName?: str
   }
 };
 
+export const getExamById = async (id: string) => {
+  try {
+    const response = await api.get(`/api/exams/${id}`);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {}) 
+      ? (err.response.data as { message: string }).message 
+      : 'Failed to fetch exam details. Please try again.');
+  }
+};
+
 export const createExam = async (examData: ExamData) => {
   try {
-    const response = await api.post('/api/exams', examData);
+    const response = await api.post(`/api/exams/${examData.branch}`, examData);
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
@@ -220,6 +246,54 @@ export const removeTeacherFromBranch = async (branchId: string, teacherId: strin
         ? (err.response.data as { message: string }).message
         : 'Failed to remove teacher from branch. Please try again.'
     );
+  }
+};
+
+export const addBlock = async (examId: string, blockData: Block) => {
+  try {
+    const response = await api.post(`/api/exams/${examId}/blocks`, blockData);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to add exam block. Please try again.');
+  }
+};
+
+export const updateBlock = async (examId: string, blockNumber: number, blockData: Partial<Block>) => {
+  try {
+    const response = await api.patch(`/api/exams/${examId}/blocks/${blockNumber}`, blockData);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to update exam block. Please try again.');
+  }
+};
+
+export const deleteBlock = async (examId: string, blockNumber: number) => {
+  try {
+    const response = await api.delete(`/api/exams/${examId}/blocks/${blockNumber}`);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to delete exam block. Please try again.');
+  }
+};
+
+export const assignInvigilator = async (examId: string, blockNumber: number, teacherId: string) => {
+  try {
+    const response = await api.post(`/api/exams/${examId}/blocks/${blockNumber}/invigilator`, { teacherId });
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to assign invigilator. Please try again.');
   }
 };
 

@@ -25,6 +25,12 @@ interface ExamSlot {
   examName: string;
   allocatedTeachers: string[];
   blockCapacity?: number;
+  blocks?: Array<{
+    number: number;
+    capacity: number;
+    location: string;
+    invigilator?: string | null;
+  }>;
 }
 
 const isTeacherAvailable = (teacher: Teacher, examDate: string): boolean => {
@@ -130,7 +136,7 @@ export default function TeacherAllocation() {
             body: JSON.stringify({
               user: teacher._id,
               title: 'New Exam Duty Allocation',
-              message: `You have been allocated to ${selectedExam.subject} exam on ${new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} from ${selectedExam.startTime} to ${selectedExam.endTime} in Block ${selectedExam.block}.`,
+              message: `You have been allocated to ${selectedExam.subject} exam on ${new Date(selectedExam.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} from ${selectedExam.startTime} to ${selectedExam.endTime}. ${selectedExam.blocks ? `Block Numbers: ${selectedExam.blocks.map(block => block.number).join(', ')}` : `Block: ${selectedExam.block}`}`,
               type: 'info',
               relatedTo: {
                 model: 'Exam',
@@ -347,7 +353,13 @@ export default function TeacherAllocation() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {examSlot.startTime} - {examSlot.endTime}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">{examSlot.block}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {examSlot.blocks?.map((block, index) => (
+                              <div key={index} className="mb-1">
+                                <span className="text-sm">{block.number}</span>
+                              </div>
+                            )) || examSlot.block}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {examSlot.allocatedTeachers?.length || 0} allocated
                           </td>
