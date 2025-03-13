@@ -7,7 +7,8 @@ import {
   deleteExam,
   assignInvigilator,
   completeBlock,
-  updateExamBlock
+  updateExamBlock,
+  allocateTeachers
 } from '../controllers/examController';
 import { protect, adminOnly as admin } from '../middleware/auth';
 
@@ -30,6 +31,11 @@ router.route('/:id')
   })
   .delete(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
     await deleteExam(req, res);
+  });
+
+router.route('/:id/allocate')
+  .post(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await allocateTeachers(req, res);
   });
 
 router.route('/:id/blocks/:blockNumber/invigilator')
