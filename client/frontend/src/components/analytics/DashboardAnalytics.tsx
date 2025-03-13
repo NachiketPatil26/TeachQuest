@@ -71,7 +71,7 @@ export default function DashboardAnalytics({ branch }: AnalyticsProps) {
 
         // Fetch exam slots
         if (branch && semester) {
-          const examsData = await getExams(branch, semester);
+          const examsData = await getExams(branch, Number(semester));
           if (!examsData || !Array.isArray(examsData)) {
             throw new Error('Invalid exam slots data received');
           }

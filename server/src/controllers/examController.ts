@@ -12,9 +12,9 @@ interface ExamRequest extends Request {
 
 export const createExam = async (req: Request, res: Response) => {
   try {
-    const { branch, semester, subject, date, startTime, endTime } = req.body;
+    const { branch, semester, subject, date, startTime, endTime, examName } = req.body;
     
-    if (!branch || !semester || !subject || !date || !startTime || !endTime) {
+    if (!branch || !semester || !subject || !date || !startTime || !endTime || !examName) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
@@ -52,6 +52,7 @@ export const createExam = async (req: Request, res: Response) => {
         date,
         startTime,
         endTime,
+        examName,
         status: 'scheduled',
         createdBy: req.user?.id || '000000000000000000000000' // Default ObjectId if no user
       });
@@ -70,14 +71,14 @@ export const createExam = async (req: Request, res: Response) => {
 export const getExams = async (req: Request, res: Response) => {
   try {
     const { branch } = req.params;
-    const { semester } = req.query;
+    const { semester, examName } = req.query;
     
     if (!branch) {
       return res.status(400).json({ message: 'Branch parameter is required' });
     }
 
     const decodedBranch = decodeURIComponent(branch);
-    console.log('Fetching exams for branch:', decodedBranch, 'semester:', semester);
+    console.log('Fetching exams for branch:', decodedBranch, 'semester:', semester, 'examName:', examName);
 
     // Build query object
     const query: any = { branch: decodedBranch };
@@ -91,11 +92,16 @@ export const getExams = async (req: Request, res: Response) => {
       query.semester = semesterNum;
     }
 
+    // Add examName to query if provided
+    if (examName) {
+      query.examName = examName;
+    }
+
     const exams = await Exam.find(query)
       .populate('allocatedTeachers', 'name email')
       .sort({ date: 1, startTime: 1 });
 
-    console.log(`Found ${exams.length} exams for branch ${decodedBranch}${semester ? ` and semester ${semester}` : ''}`);
+    console.log(`Found ${exams.length} exams for branch ${decodedBranch}${semester ? ` and semester ${semester}` : ''}${examName ? ` and exam ${examName}` : ''}`);
     res.json(exams);
   } catch (error) {
     console.error('Get exams error:', error);
@@ -317,17 +323,34 @@ export const allocateTeachers = async (req: Request, res: Response) => {
     const { id } = req.params;
     const { teacherIds } = req.body;
     
-    const exam = await Exam.findById(id);
+    const exam = await Exam.findById(id)
+      .populate('allocatedTeachers', 'name email');
+
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
-    (exam as any).allocatedTeachers = teacherIds;
+    // Update allocated teachers
+    exam.allocatedTeachers = teacherIds;
     const updatedExam = await exam.save();
 
-    res.json(updatedExam);
+    // Return exam with populated teacher details and exam details
+    const populatedExam = await Exam.findById(updatedExam._id)
+      .populate('allocatedTeachers', 'name email');
+
+    res.json({
+      _id: populatedExam._id,
+      examName: exam.examName,
+      subject: exam.subject,
+      semester: exam.semester,
+      date: exam.date,
+      startTime: exam.startTime,
+      endTime: exam.endTime,
+      allocatedTeachers: populatedExam.allocatedTeachers
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Allocate teachers error:', error);
+    res.status(500).json({ message: 'Failed to allocate teachers' });
   }
 };
 

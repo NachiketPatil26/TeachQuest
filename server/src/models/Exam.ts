@@ -12,6 +12,7 @@ interface IBlock {
 export interface IExam extends mongoose.Document {
   branch: string;
   semester: number;
+  examName: string;
   subject: string;
   date: Date;
   startTime: string;
@@ -62,6 +63,10 @@ const examSchema = new mongoose.Schema<IExam>(
       required: true,
       min: 1,
       max: 8
+    },
+    examName: {
+      type: String,
+      required: true,
     },
     subject: {
       type: String,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Check, AlertCircle } from 'lucide-react';
 import { getTeachers, getExams, allocateTeachers } from '../../services/api';
-import WorkloadManager from './WorkloadManager';
+
 
 import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 
@@ -22,7 +22,7 @@ interface ExamSlot {
   startTime: string;
   endTime: string;
   block: string;
-  
+  examName: string;
   allocatedTeachers: string[];
   blockCapacity?: number;
 }
@@ -38,18 +38,11 @@ const isTeacherAvailable = (teacher: Teacher, examDate: string): boolean => {
 };
 
 const isTeacherSubjectConflict = (): boolean => {
-  // Temporarily disabled subject conflict check
-  // if (!teacher.subjects || !Array.isArray(teacher.subjects)) {
-  //   return true;
-  // }
-  // // Check if the teacher teaches the subject
-  // const teachesSubject = teacher.subjects.some(subject => subject === subjectId);
-  // return !teachesSubject; // Return true if there is a conflict (teacher doesn't teach the subject)
   return false; // Temporarily return false to disable subject conflict check
 };
 
 export default function TeacherAllocation() {
-  const { branch, semester } = useParams<{ branch: string; semester: string }>();
+  const { branch, semester, examName } = useParams<{ branch: string; semester: string; examName: string }>();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
@@ -74,17 +67,20 @@ export default function TeacherAllocation() {
         }
         setTeachers(teachersData);
 
-        // Fetch exam slots using API service
-        if (branch && semester) {
-          console.log(`Fetching exam slots for branch: ${branch} and semester: ${semester}`);
-          const examsData = await getExams(branch, semester);
+        // Fetch exam slots using API service with examName filter
+        if (branch && semester && examName) {
+          console.log(`Fetching exam slots for branch: ${branch}, semester: ${semester}, exam: ${examName}`);
+          const examsData = await getExams(branch, parseInt(semester), examName);
           console.log('Exam slots data received:', examsData);
           if (!examsData || !Array.isArray(examsData)) {
             throw new Error('Invalid exam slots data received');
           }
-          setExamSlots(examsData);
+          // Filter exams by examName
+          const filteredExams = examsData.filter(exam => exam.examName === examName);
+          setExamSlots(filteredExams);
         } else {
-          console.warn('No branch or semester provided for fetching exam slots');
+          console.warn('Missing required parameters for fetching exam slots');
+          setError('Missing required parameters');
         }
 
       } catch (error) {
@@ -97,7 +93,7 @@ export default function TeacherAllocation() {
     };
 
     fetchData();
-  }, [branch, semester]);
+  }, [branch, semester, examName]);
 
   const handleAllocation = () => {
     console.log('Starting teacher allocation process...');
@@ -478,17 +474,7 @@ export default function TeacherAllocation() {
               </div>
             </div>
           </div>
-          <div>
-            <WorkloadManager 
-              branch={branch} 
-              semester={semester} 
-              examId={selectedSlot}
-              onTeachersSelected={(teacherIds) => {
-                setSelectedTeachers(teacherIds);
-                setError('');
-              }}
-            />
-          </div>
+         
         </div>
       </div>
     </div>
