@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-
+import TeacherLoginImage from '../assets/TeacherLoginImage.png';
 interface LoginFormData {
   email: string;
   password: string;
@@ -40,12 +40,19 @@ export default function TeacherLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
+    
     if (validateForm()) {
-      await login({
+      const result = await login({
         ...formData,
         role: 'teacher'
       });
-      navigate('/teacher/dashboard');
+
+      if (result.success) {
+        navigate('/teacher/dashboard');
+      } else {
+        setLoginError(result.error || 'Login failed');
+      }
     }
   };
 
@@ -68,9 +75,7 @@ export default function TeacherLogin() {
     <div className="min-h-screen bg-[#9FC0AE] flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-8">
-          <img
-            src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=200&h=200"
-            alt="Teacher"
+          <img src={TeacherLoginImage}            alt="Teacher"
             className="w-24 h-24 rounded-full"
           />
         </div>

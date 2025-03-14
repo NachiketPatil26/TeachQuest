@@ -1,7 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, ClipboardList, Eye, ArrowRight, Phone, Mail } from 'lucide-react';
-
+import TeachQuestLogo from '../assets/TeachQuestLogo.png';
+import HeroSectionImage from '../assets/Digital personal files-amico.png';
+import FeaturesImage from '../assets/Exams-amico.png';
+import TeacherCardImage from '../assets/Teacher-amico.png';
+import AdminCardImage from '../assets/AdminTypes.png';
 function Navbar() {
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -23,7 +27,10 @@ function Navbar() {
       isScrolled ? 'bg-white shadow-md py-4' : 'bg-transparent py-6'
     }`}>
       <div className="container mx-auto px-4 flex items-center justify-between">
-        <img src="/teachquest-logo.png" alt="TeachQuest" className="h-8" />
+      <div className="flex items-center space-x-2">
+      <img src={TeachQuestLogo} alt="TeachQuest" className="h-8" />
+      <h1 className="text-xl font-bold text-gray-800">TeachQuest</h1>
+    </div>
         <div className="space-x-8">
           <button 
             onClick={() => scrollToSection('features')}
@@ -76,7 +83,7 @@ function RoleCard({ title, description, features, onGetStarted }: {
   return (
     <div className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
       <div className="mb-4">
-        <img src={`/${title.toLowerCase()}-icon.png`} alt={title} className="w-16 h-16" />
+        <img src={TeacherCardImage} alt={title} className="w-16 h-16" />
       </div>
       <h3 className="text-xl font-bold mb-4">{title}</h3>
       <p className="text-gray-600 mb-6">{description}</p>
@@ -97,6 +104,39 @@ function RoleCard({ title, description, features, onGetStarted }: {
     </div>
   );
 }
+
+function RoleCard1({ title, description, features,  onGetStarted }: { 
+  title: string; 
+  description: string; 
+  features: string[];
+  image: string;  // Accept image prop
+  onGetStarted: () => void;
+}) {
+  return (
+    <div className="bg-white p-8 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+      <div className="mb-4">
+        <img src={AdminCardImage} alt={title} className="w-16 h-16" />  {/* Use dynamic image */}
+      </div>
+      <h3 className="text-xl font-bold mb-4">{title}</h3>
+      <p className="text-gray-600 mb-6">{description}</p>
+      <ul className="space-y-2 mb-6">
+        {features.map((feature, index) => (
+          <li key={index} className="flex items-center space-x-2">
+            <span className="w-1 h-1 bg-gray-400 rounded-full" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <button 
+        onClick={onGetStarted}
+        className="bg-[#475F54] text-white px-6 py-2 rounded flex items-center hover:bg-[#364842] transition-colors"
+      >
+        Get Started <ArrowRight className="w-4 h-4 ml-2" />
+      </button>
+    </div>
+  );
+}
+
 
 function FaqItem({ question, answer }: { question: string; answer: string }) {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -150,26 +190,25 @@ export default function LandingPage() {
             Effortless Scheduling
             <br />
             and
-            <br />
             Supervision
           </h1>
           <div className="space-x-4">
             <button 
               onClick={() => navigate('/teacher/login')}
-              className="bg-[#9FC0AE] text-white px-6 py-2 rounded hover:bg-[#8BAF9A] transition-colors"
+              className="bg-[#9FC0AE] text-white px-6 py-3 rounded hover:bg-[#8BAF9A] transition-colors"
             >
               Teacher
             </button>
             <button 
               onClick={() => navigate('/admin/login')}
-              className="bg-[#9FC0AE] text-white px-6 py-2 rounded hover:bg-[#8BAF9A] transition-colors"
+              className="bg-[#9FC0AE] text-white px-6 py-3 rounded hover:bg-[#8BAF9A] transition-colors"
             >
               Admin
             </button>
           </div>
         </div>
         <div className="flex-1 flex justify-end">
-          <img src="https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&q=80" alt="Hero" className="max-w-xl" />
+          <img src={HeroSectionImage} alt="Hero" className="w-96 pr-8 drop-shadow-lg"  />
         </div>
       </section>
 
@@ -179,7 +218,7 @@ export default function LandingPage() {
           <div className="bg-white p-12 rounded-lg shadow-lg animate-on-scroll">
             <div className="grid grid-cols-2 gap-12">
               <div>
-                <img src="https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&q=80" alt="Students" className="w-full" />
+                <img src={FeaturesImage} alt="Students" className="w-full" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-8">Features</h2>
@@ -222,12 +261,11 @@ export default function LandingPage() {
           />
         </div>
         <div className="animate-on-scroll">
-          <RoleCard
+          <RoleCard1
             title="Admin"
             description="As an admin, streamline your exam management with our intuitive platform. Easily allocate invigilation duties, manage teacher availabilities, and monitor completed duties."
             features={['Easy inputs', 'Everything at one place', 'Hassle-free automated allocation']}
-            onGetStarted={() => navigate('/admin/login')}
-          />
+            onGetStarted={() => navigate('/admin/login')} image={''}          />
         </div>
       </section>
 
