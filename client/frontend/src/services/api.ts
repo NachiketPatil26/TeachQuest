@@ -287,7 +287,7 @@ export const deleteBlock = async (examId: string, blockNumber: number) => {
 
 export const assignInvigilator = async (examId: string, blockNumber: number, teacherId: string) => {
   try {
-    const response = await api.post(`/api/exams/${examId}/blocks/${blockNumber}/invigilator`, { teacherId });
+    const response = await api.post(`/api/exams/${examId}/blocks/${blockNumber}/invigilator`, { invigilatorId: teacherId });
     return response.data;
   } catch (error) {
     const err = error as AxiosError;

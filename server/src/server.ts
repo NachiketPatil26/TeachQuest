@@ -7,6 +7,7 @@ import { protect, adminOnly, teacherOnly } from './middleware/auth';
 import * as userController from './controllers/userController';
 import * as notificationController from './controllers/notificationController';
 import * as branchController from './controllers/branchController';
+import * as examController from './controllers/examController';
 import examRoutes from './routes/examRoutes';
 import User from './models/User';
 
@@ -67,6 +68,12 @@ app.get('/api/users/teachers', protect as unknown as express.RequestHandler, use
 app.use('/api/admin', protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler);
 
 // Exam Routes
+
+app.post('/api/exams', examController.createExam as unknown as express.RequestHandler);
+app.get('/api/exams/:branch', examController.getExamsByBranch as unknown as express.RequestHandler);
+app.put('/api/exams/:id', examController.updateExam as unknown as express.RequestHandler);
+app.delete('/api/exams/:id', examController.deleteExam as unknown as express.RequestHandler);
+app.post('/api/exams/:id/allocate', examController.allocateTeachers as unknown as express.RequestHandler);
 app.use('/api/exams', examRoutes);
 
 // Branch Routes
