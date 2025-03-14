@@ -190,33 +190,34 @@ export default function AdminDashboard() {
       bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
+      title: 'Analytics Dashboard',
+      description: 'View workload and subject analytics',
+      icon: <BarChart2 size={24} />,
+      onClick: () => navigate(`/admin/analytics/${selectedBranch}`),
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+    },
+    {
       title: 'Upload Excel Data',
       description: 'Import timetables and teacher data',
       icon: <Upload size={24} />,
       onClick: () => document.getElementById('excelUpload')?.click(),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Duty Reports',
       description: 'View and track teacher duties',
       icon: <ClipboardList size={24} />,
       onClick: () => navigate(`/admin/duties/${selectedBranch}`),
-      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
       title: 'Remuneration',
       description: 'Manage payment and compensation',
       icon: <DollarSign size={24} />,
       onClick: () => navigate(`/admin/remuneration/${selectedBranch}`),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Analytics',
-      description: 'View duty statistics and insights',
-      icon: <BarChart2 size={24} />,
-      onClick: () => navigate(`/admin/analytics/${selectedBranch}`),
       bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    }
+    },
+  
   ];
   
   // Handle excel file upload

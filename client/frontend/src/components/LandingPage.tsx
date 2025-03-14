@@ -186,11 +186,10 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-16 flex items-center justify-between animate-on-scroll">
         <div className="max-w-lg">
-          <h1 className="text-5xl font-bold mb-4">
+          <h1 className="text-4xl font-bold mb-4">
             Effortless Scheduling
             <br />
             and
-            <br />
             Supervision
           </h1>
           <div className="space-x-4">

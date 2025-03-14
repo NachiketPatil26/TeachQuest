@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Download } from 'lucide-react';
 import api from '../../services/api'; 
-import {  getExams, updateExam } from '../../services/api';
+import {  getExams  } from '../../services/api';
 import ExamDetailModal from '../timetable/ExamDetailModal';
 import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 interface Subject {
@@ -13,38 +13,31 @@ interface Subject {
 
 interface ExamSlot {
   _id: string;
-  subjectId: string;
   subject: string;
+  examName: string;
   date: string;
   startTime: string;
   endTime: string;
-  block: string;
-  blocks?: Block[];
   allocatedTeachers: string[];
-  blockCapacity?: number;
+  blocks?: Block[];
 }
 
 interface Block {
   number: number;
-  invigilator: string;
   capacity: number;
   location: string;
-  status: 'pending' | 'completed';
-  completedAt?: string;
+  invigilator?: string | null;
 }
 
 export default function ExamTimetable(): React.ReactElement {
   const navigate = useNavigate();
-  const { branch } = useParams<{ branch: string }>();
+  const { branch, semester, examName } = useParams<{ branch: string; semester: string; examName: string }>();
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
-
-  const [blocks] = useState(['A', 'B', 'C', 'D']);
+  const [, setCurrentSemester] = useState<string>(semester || '');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedExam, setSelectedExam] = useState<ExamSlot | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // New state variables for subject management
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [newSubject, setNewSubject] = useState('');
   const [showAddSubject, setShowAddSubject] = useState(false);
@@ -62,9 +55,17 @@ export default function ExamTimetable(): React.ReactElement {
         
 
         // Fetch exam slots using API service
-        if (branch) {
-          const examsData = await getExams(branch);
-          setExamSlots(examsData);
+        if (branch && semester) {
+          // Modified to include semester parameter
+          const examsData = await getExams(branch, Number(semester));
+          
+          // Filter exam slots by examName if provided
+          const filteredExams = examName 
+            ? examsData.filter((exam: ExamSlot) => exam.examName === examName)
+            : examsData;
+            
+          setExamSlots(filteredExams);
+          setCurrentSemester(semester);
           
           // Extract unique subjects from exam data
           const uniqueSubjects = [...new Set(examsData.map((exam: ExamSlot) => exam.subject))]
@@ -84,7 +85,7 @@ export default function ExamTimetable(): React.ReactElement {
     };
 
     fetchData();
-  }, [branch]);
+  }, [branch, semester, examName]);
 
   const handleAddSubject = async () => {
     if (newSubject.trim()) {
@@ -105,8 +106,19 @@ export default function ExamTimetable(): React.ReactElement {
     }
   };
 
+  // Function to check for scheduling conflicts
+  const checkForSchedulingConflicts = (date: string, startTime: string, endTime: string): boolean => {
+    return examSlots.some(slot => 
+      slot.date === date && (
+        (startTime >= slot.startTime && startTime < slot.endTime) ||
+        (endTime > slot.startTime && endTime <= slot.endTime) ||
+        (startTime <= slot.startTime && endTime >= slot.endTime)
+      )
+    );
+  };
+
   const handleAddExamSlot = async () => {
-    if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end) {
+    if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end && examName) {
       try {
         setError('');
         const subjectName = subjects.find(s => s.id === selectedSubject)?.name;
@@ -115,32 +127,29 @@ export default function ExamTimetable(): React.ReactElement {
           return;
         }
 
-        const initialBlocks: Block[] = blocks.map((_blockLetter, index) => ({
-          number: index,
-          invigilator: '',
-          capacity: 0,
-          location: '',
-          status: 'pending'
-        }));
+        // Check for scheduling conflicts
+        if (checkForSchedulingConflicts(selectedDate, selectedTime.start, selectedTime.end)) {
+          setError('Scheduling conflict detected! There is already an exam scheduled during this time slot.');
+          return;
+        }
 
         const response = await api.post('/api/exams', {
           branch,
+          semester: Number(semester),
+          examName,
           subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
-          endTime: selectedTime.end,
-          blocks: initialBlocks
+          endTime: selectedTime.end
         });
     
         const newSlot: ExamSlot = {
           _id: response.data._id,
-          subjectId: selectedSubject,
           subject: subjectName,
+          examName,
           date: selectedDate,
           startTime: selectedTime.start,
           endTime: selectedTime.end,
-          block: 'A',
-          blocks: initialBlocks,
           allocatedTeachers: []
         };
         
@@ -183,90 +192,12 @@ export default function ExamTimetable(): React.ReactElement {
     setIsModalOpen(true);
   };
 
-  const handleUpdateBlock = async (blockNumber: number, blockData: Partial<Block>) => {
-    if (!selectedExam) return;
-  
-    try {
-      // Validate block data
-      if (blockData.capacity !== undefined && blockData.capacity < 0) {
-        setError('Capacity cannot be negative');
-        return;
-      }
-  
-      if (blockData.status && !['pending', 'in_progress', 'completed'].includes(blockData.status)) {
-        setError('Invalid block status');
-        return;
-      }
-  
-      // Update block data
-      const response = await api.patch(`/api/exams/${selectedExam._id}/blocks/${blockNumber}`, blockData);
-      if (response.data) {
-        const updatedExam = {
-          ...selectedExam,
-          blocks: response.data.blocks
-        };
-        setSelectedExam(updatedExam);
-        
-        // Update exam slots with new block data
-        setExamSlots(examSlots.map(slot =>
-          slot._id === updatedExam._id ? { ...slot, blocks: updatedExam.blocks } : slot
-        ));
-  
-        // Check if all blocks are properly configured
-        const allBlocksConfigured = updatedExam.blocks?.every((block: Block) => 
-          block.capacity > 0 && block.location && block.status
-        );
-  
-        if (allBlocksConfigured) {
-          setAllExamsHaveBlocks(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error updating block:', error);
-      const errorMessage = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
-      setError(errorMessage || 'An error occurred while updating the block');
-    }
-  };
+ 
 
-  const handleBlockAssignment = async (slotId: string, block: string) => {
-    try {
-      // Define the update data with proper typing
-      const updateData: { blockAssignment: string } = {
-        blockAssignment: block
-      };
-      
-      await updateExam(slotId, { block: updateData.blockAssignment });
 
-      setExamSlots(slots =>
-        slots.map(slot =>
-          slot._id === slotId ? { ...slot, block } : slot
-        )
-      );
-    } catch (error) {
-      console.error('Error updating block:', error);
-      setError('Failed to update block assignment');
-    }
-  };
+ 
 
-  const [allExamsHaveBlocks, setAllExamsHaveBlocks] = useState(false);
 
-  useEffect(() => {
-    // Check if all exams have blocks assigned
-    const checkExamBlocks = () => {
-      const allHaveBlocks = examSlots.every(slot => 
-        slot.blocks && slot.blocks.length > 0 && slot.blocks.every(block => 
-          block.number >= 0 &&
-          block.capacity > 0 &&
-          block.location.trim() !== '' &&
-          block.invigilator &&
-          (block.status === 'pending' || block.status === 'completed')
-        )
-      );
-      setAllExamsHaveBlocks(allHaveBlocks);
-    };
-
-    checkExamBlocks();
-  }, [examSlots]);
 
 
 
@@ -294,36 +225,53 @@ export default function ExamTimetable(): React.ReactElement {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="md:flex md:items-center md:justify-between mb-8">
-        <div className="relative">
-  {/* Fixed Navbar */}
-  <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center justify-between">
-  {/* Left Side: Logo and Title */}
-  <div className="flex items-center gap-3">
-    <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
-    <h1 className="text-3xl font-bold text-gray-900">Exam Timetable</h1>
-  </div>
+          <div className="relative">
+            {/* Fixed Navbar */}
+            <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center justify-between">
+              {/* Left Side: Logo and Title */}
+              <div className="flex items-center gap-3">
+                <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
+                <h1 className="text-3xl font-bold text-gray-900">Exam Timetable</h1>
+              </div>
+              
+              {/* Right Side: Back Button */}
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => navigate(`/admin/timetable/${branch}/${semester}`)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleExportToExcel}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+                >
+                  <Download className="-ml-1 mr-2 h-5 w-5" />
+                  Export to Excel
+                </button>
+              </div>
+            </div>
+          </div>
 
-  {/* Right Side: Export Button */}
-  <button
-    onClick={handleExportToExcel}
-    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
-  >
-    <Download className="-ml-1 mr-2 h-5 w-5" />
-    Export to Excel
-  </button>
-</div>
+            {/* Right Side: Export Button */}
+            <button
+              onClick={handleExportToExcel}
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+            >
+              <Download className="-ml-1 mr-2 h-5 w-5" />
+              Export to Excel
+            </button>
+          </div>
 
-  {/* Page Content with Padding to Avoid Overlap */}
-  <div className="mt-20">
-    {examSlots.length > 0 && (
-      <div className="mb-4">
-        
-      </div>
-    )}
-    <p className="text-sm text-gray-500">{branch}</p>
-  </div>
-</div>
-
+          {/* Page Content with Padding to Avoid Overlap */}
+          <div className="mt-20">
+            {examSlots.length > 0 && (
+              <div className="mb-4">
+                
+              </div>
+            )}
+            <p className="text-sm text-gray-500">{branch}</p>
+          </div>
         </div>
 
         {error && (
@@ -396,7 +344,7 @@ export default function ExamTimetable(): React.ReactElement {
 
         {/* Exam Slot Scheduling */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-medium mb-4">Schedule Exam</h3>
+          <h3 className="text-lg font-medium mb-4">Schedule Exam for {examName}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Date</label>
@@ -460,101 +408,110 @@ export default function ExamTimetable(): React.ReactElement {
         {/* Exam Slots */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
           <h3 className="text-lg font-medium mb-4">Exam Slots</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teachers</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {examSlots.map((slot) => (
-                  <tr key={slot._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {new Date(slot.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{slot.subject}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {slot.startTime} - {slot.endTime}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <select
-                        value={slot.block}
-                        onChange={(e) => handleBlockAssignment(slot._id, e.target.value)}
-                        className="rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
-                      >
-                        {blocks.map((block) => (
-                          <option key={block} value={block}>Block {block}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {slot.allocatedTeachers?.length || 0} allocated
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex space-x-4">
+          {examSlots.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No exam slots found</div>
+          ) : (
+            Object.entries(
+              examSlots.reduce((acc, slot) => {
+                const key = slot.examName || 'Uncategorized';
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(slot);
+                return acc;
+              }, {} as Record<string, ExamSlot[]>)
+            ).map(([examName, slots]) => (
+              <div key={examName} className="mb-8 last:mb-0">
+                <h4 className="text-lg font-medium text-gray-900 mb-4">{examName}</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Block</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teachers</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {slots.map((slot) => (
+                      <tr key={slot._id}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {new Date(slot.date).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">{slot.subject}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {slot.startTime} - {slot.endTime}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleExamClick(slot);
-                          }}
-                          className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('Are you sure you want to delete this exam slot?')) {
-                              handleDeleteExamSlot(slot._id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleExamClick(slot);
+                              }}
+                              className="text-[#9FC0AE] hover:text-[#8BAF9A] text-sm"
+                            >
+                              Edit
+                            </button>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {slot.allocatedTeachers?.length || 0} allocated
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex space-x-4">
+                           
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (window.confirm('Are you sure you want to delete this exam slot?')) {
+                                  handleDeleteExamSlot(slot._id);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 text-sm"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
 
-        {/* Navigation to Teacher Allocation */}
-        {examSlots.length > 0 && (
+        {examSlots.length > 0 &&
           <div className="flex justify-end mb-8">
             <button
               onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/admin/allocation/${branch}`);
+                e.preventDefault();
+                navigate(`/admin/allocation/${branch}/${semester}/${examName}`, {
+                  state: { examSlots: examSlots }
+                });
               }}
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+              className="px-6 py-3 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-4"
             >
               Proceed to Teacher Allocation
             </button>
           </div>
-        )}
+        }
 
+        {/* Modal for exam details */}
+        {selectedExam && (
+          <ExamDetailModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            exam={selectedExam}
+            // onUpdateBlock={handleUpdateBlock}
+          />
+        )}
       </div>
-      {selectedExam && (
-        <ExamDetailModal
-          exam={selectedExam}
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          onUpdateBlock={handleUpdateBlock}
-        />
-      )}
     </div>
   );
 }

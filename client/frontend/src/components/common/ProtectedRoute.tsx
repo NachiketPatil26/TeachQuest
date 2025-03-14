@@ -18,8 +18,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ role }) => {
   }
 
   if (user.role !== role) {
-    return <Navigate to="/" replace />;
+    // Redirect to the appropriate dashboard based on user's role
+    return <Navigate to={`/${user.role}/dashboard`} replace />;
   }
 
   return <Outlet />;
-}; 
+};
