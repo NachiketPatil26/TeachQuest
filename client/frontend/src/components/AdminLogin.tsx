@@ -65,7 +65,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#9FC0AE] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#e8efeb] flex items-center justify-center px-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="flex justify-center mb-8">
           <img src={AdminLoginImage}  alt="Admin Login" className="w-24 h-24 rounded-full" />
@@ -123,7 +123,7 @@ export default function AdminLogin() {
 
           <button
             type="submit"
-            className="w-full bg-[#9FC0AE] text-white py-2 rounded-md hover:bg-[#8BAF9A] transition-colors focus:outline-none focus:ring-2 focus:ring-[#9FC0AE] focus:ring-offset-2"
+            className="w-full bg-[#2A4F8F] text-white py-2 rounded-md hover:bg-[#1E365E] transition-colors focus:outline-none focus:ring-2 focus:ring-[#9FC0AE] focus:ring-offset-2"
           >
             Login
           </button>

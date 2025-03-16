@@ -12,6 +12,7 @@ import ReportsPage from './pages/teacher/ReportsPage';
 import ExamTimetable from './components/timetable/ExamTimetable';
 import TeacherAllocation from './components/allocation/TeacherAllocation';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import Analytics from './pages/admin/Analytics';
 
 
 function App() {
@@ -31,7 +32,7 @@ function App() {
             <Route path="allocation/:branch" element={<TeacherAllocation />} />
             <Route path="duties/:branch" element={<div>Duties Page</div>} />
             <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
-            <Route path="analytics/:branch" element={<div>Analytics Page</div>} />
+            <Route path="analytics/:branch" element={<Analytics/>} />
           </Route>
 
           {/* Protected Teacher Routes */}
