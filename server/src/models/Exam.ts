@@ -5,12 +5,13 @@ interface IBlock {
   invigilator: mongoose.Types.ObjectId;
   capacity: number;
   location: string;
-  status: 'pending' | 'completed';
   completedAt?: Date;
 }
 
 export interface IExam extends mongoose.Document {
   branch: string;
+  semester: number;
+  examName: string;
   subject: string;
   date: Date;
   startTime: string;
@@ -29,7 +30,7 @@ const blockSchema = new mongoose.Schema<IBlock>({
   invigilator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
+    required: false,
   },
   capacity: {
     type: Number,
@@ -40,11 +41,7 @@ const blockSchema = new mongoose.Schema<IBlock>({
     type: String,
     default: '',
   },
-  status: {
-    type: String,
-    enum: ['pending', 'completed'],
-    default: 'pending',
-  },
+ 
   completedAt: {
     type: Date,
   },
@@ -53,6 +50,16 @@ const blockSchema = new mongoose.Schema<IBlock>({
 const examSchema = new mongoose.Schema<IExam>(
   {
     branch: {
+      type: String,
+      required: true,
+    },
+    semester: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 8
+    },
+    examName: {
       type: String,
       required: true,
     },

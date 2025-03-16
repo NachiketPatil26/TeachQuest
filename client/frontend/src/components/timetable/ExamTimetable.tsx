@@ -12,20 +12,17 @@ interface Subject {
 
 interface ExamSlot {
   _id: string;
-  subjectId: string;
   subject: string;
+  examName: string;
   date: string;
   startTime: string;
   endTime: string;
-  block: string;
-  blocks?: Block[];
   allocatedTeachers: string[];
-  blockCapacity?: number;
+  blocks?: Block[];
 }
 
 interface Block {
   number: number;
-  invigilator: string;
   capacity: number;
   location: string;
   status: "pending" | "completed";
@@ -34,7 +31,7 @@ interface Block {
 
 export default function ExamTimetable(): React.ReactElement {
   const navigate = useNavigate();
-  const { branch } = useParams<{ branch: string }>();
+  const { branch, semester, examName } = useParams<{ branch: string; semester: string; examName: string }>();
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
 
   const [blocks] = useState(["A", "B", "C", "D"]);
@@ -82,7 +79,7 @@ export default function ExamTimetable(): React.ReactElement {
     };
 
     fetchData();
-  }, [branch]);
+  }, [branch, semester, examName]);
 
   const handleAddSubject = async () => {
     if (newSubject.trim()) {
@@ -101,6 +98,17 @@ export default function ExamTimetable(): React.ReactElement {
         console.error("Error adding subject:", err);
       }
     }
+  };
+
+  // Function to check for scheduling conflicts
+  const checkForSchedulingConflicts = (date: string, startTime: string, endTime: string): boolean => {
+    return examSlots.some(slot => 
+      slot.date === date && (
+        (startTime >= slot.startTime && startTime < slot.endTime) ||
+        (endTime > slot.startTime && endTime <= slot.endTime) ||
+        (startTime <= slot.startTime && endTime >= slot.endTime)
+      )
+    );
   };
 
   const handleAddExamSlot = async () => {
@@ -130,6 +138,8 @@ export default function ExamTimetable(): React.ReactElement {
 
         const response = await api.post("/api/exams", {
           branch,
+          semester: Number(semester),
+          examName,
           subject: subjectName,
           date: selectedDate,
           startTime: selectedTime.start,
@@ -139,8 +149,8 @@ export default function ExamTimetable(): React.ReactElement {
 
         const newSlot: ExamSlot = {
           _id: response.data._id,
-          subjectId: selectedSubject,
           subject: subjectName,
+          examName,
           date: selectedDate,
           startTime: selectedTime.start,
           endTime: selectedTime.end,
@@ -425,7 +435,7 @@ export default function ExamTimetable(): React.ReactElement {
 
         {/* Exam Slot Scheduling */}
         <div className="bg-white shadow rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-medium mb-4">Schedule Exam</h3>
+          <h3 className="text-lg font-medium mb-4">Schedule Exam for {examName}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -599,15 +609,16 @@ export default function ExamTimetable(): React.ReactElement {
           </div>
         </div>
 
-        {/* Navigation to Teacher Allocation */}
-        {examSlots.length > 0 && (
+        {examSlots.length > 0 &&
           <div className="flex justify-end mb-8">
             <button
               onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/admin/allocation/${branch}`);
+                e.preventDefault();
+                navigate(`/admin/allocation/${branch}/${semester}/${examName}`, {
+                  state: { examSlots: examSlots }
+                });
               }}
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]"
+              className="px-6 py-3 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-4"
             >
               Proceed to Teacher Allocation
             </button>
@@ -625,3 +636,4 @@ export default function ExamTimetable(): React.ReactElement {
     </div>
   );
 }
+

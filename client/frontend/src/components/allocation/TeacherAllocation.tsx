@@ -12,6 +12,13 @@ interface Teacher {
   availability: string[];
 }
 
+interface Block {
+  number: number;
+  capacity: number;
+  location: string;
+  invigilator?: string | null;
+}
+
 interface ExamSlot {
   _id: string;
   subjectId: string;
@@ -23,10 +30,12 @@ interface ExamSlot {
 
   allocatedTeachers: string[];
   blockCapacity?: number;
+  blocks?: Block[];
 }
 
+// Improved availability check with better date handling
 const isTeacherAvailable = (teacher: Teacher, examDate: string): boolean => {
-  if (!teacher.availability || !Array.isArray(teacher.availability)) {
+  if (!teacher.availability || !Array.isArray(teacher.availability) || teacher.availability.length === 0) {
     return false;
   }
   // Get the weekday name from the exam date
@@ -49,15 +58,19 @@ const isTeacherSubjectConflict = (): boolean => {
 };
 
 export default function TeacherAllocation() {
-  const { branch } = useParams<{ branch: string }>();
+  const { branch, semester, examName } = useParams<{ branch: string; semester: string; examName: string }>();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [selectedTeachers, setSelectedTeachers] = useState<string[]>([]);
+  const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isBlockMode, setIsBlockMode] = useState(false);
+  const [allocating, setAllocating] = useState(false);
 
+  // Clear error/notification messages after 5 seconds
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -96,8 +109,9 @@ export default function TeacherAllocation() {
       }
     };
 
+  useEffect(() => {
     fetchData();
-  }, [branch]);
+  }, [fetchData]);
 
   const handleAllocation = () => {
     console.log("Starting teacher allocation process...");
@@ -221,8 +235,11 @@ export default function TeacherAllocation() {
 
     console.log("Teacher availability check:", {
       teacherId,
+      name: teacher.name,
       isAvailable,
-      hasSubjectConflict,
+      isQualified,
+      hasConflict,
+      isAssignedToOtherBlock,
       date: slot.date,
       subjectId: slot.subjectId,
     });
@@ -278,19 +295,62 @@ export default function TeacherAllocation() {
         teacherSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-  }, [selectedSlot]); // Scroll to teacher selection whenever selectedSlot changes
+  }, [selectedSlot]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9FC0AE]"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#9FC0AE] mb-4"></div>
+        <p className="text-gray-600">Loading exam allocation data...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 pb-8">
+      {/* Fixed Navbar */}
+      <div className="fixed top-0 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex items-center gap-3">
+        <img className="h-10 w-10" src={TeachQuestLogo} alt="TeachQuest Logo" />
+        <h1 className="text-2xl font-bold text-gray-900">Teacher Allocation</h1>
+      </div>
+
+      {/* Main content with padding to prevent overlap with fixed navbar */}
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        {/* Breadcrumbs and context info */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {branch} - {semester ? `Semester ${semester}` : ''} - {examName}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Allocate teachers to exam slots and assign invigilators to blocks
+          </p>
+        </div>
+
+        {/* Notification area */}
+        {notification && (
+          <div 
+            className={`mb-6 px-4 py-3 rounded-lg relative flex items-start ${
+              notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+              notification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+              'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}
+            role="alert"
+          >
+            {notification.type === 'error' && <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0" />}
+            {notification.type === 'success' && <Check className="mr-2 h-5 w-5 flex-shrink-0" />}
+            {notification.type === 'info' && <AlertTriangle className="mr-2 h-5 w-5 flex-shrink-0" />}
+            <span>{notification.message}</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg relative mb-6 flex items-start" role="alert">
+            <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {/* Confirmation Dialog */}
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
@@ -305,14 +365,21 @@ export default function TeacherAllocation() {
                 <button
                   onClick={() => setShowConfirmDialog(false)}
                   className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={allocating}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmAllocation}
-                  className="px-4 py-2 bg-[#9FC0AE] text-white rounded hover:bg-[#8BAF9A]"
+                  disabled={allocating}
+                  className="px-4 py-2 bg-[#9FC0AE] text-white rounded hover:bg-[#8BAF9A] disabled:opacity-70 flex items-center"
                 >
-                  Confirm
+                  {allocating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : 'Confirm'}
                 </button>
               </div>
             </div>
