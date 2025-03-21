@@ -82,3 +82,28 @@ export const deleteNotification = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Create a new notification
+export const createNotification = async (req: Request, res: Response) => {
+  try {
+    const { user, title, message, type, relatedTo } = req.body;
+    
+    if (!user || !title || !message) {
+      return res.status(400).json({ message: 'User, title, and message are required fields' });
+    }
+
+    const notification = new Notification({
+      user,
+      title,
+      message,
+      type: type || 'info',
+      relatedTo
+    });
+
+    const savedNotification = await notification.save();
+    res.status(201).json(savedNotification);
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

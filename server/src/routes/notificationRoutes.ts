@@ -4,7 +4,8 @@ import {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
-  deleteNotification
+  deleteNotification,
+  createNotification
 } from '../controllers/notificationController';
 import { protect } from '../middleware/auth';
 
@@ -22,5 +23,9 @@ router.route('/:id/user/:userId')
 
 router.route('/user/:userId/mark-all-read')
   .put(protect as unknown as express.RequestHandler, markAllAsRead as express.RequestHandler);
+
+// Route for creating a new notification
+router.route('/')
+  .post(protect as unknown as express.RequestHandler, createNotification as unknown as express.RequestHandler);
 
 export default router;

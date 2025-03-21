@@ -2,10 +2,55 @@
 
 
 
-import { Calendar } from "lucide-react"; // Importing the calendar icon
+import { useState, useEffect } from 'react';
+import { Calendar, Loader } from "lucide-react";
 import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { getTeacherAllocations } from '../../services/api';
+
+interface Duty {
+  _id: string;
+  subject: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  blocks?: Array<{
+    number: number;
+    capacity: number;
+    location: string;
+    invigilator?: string;
+  }>;
+  status: 'scheduled' | 'in-progress' | 'completed';
+}
 
 const DutiesPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [duties, setDuties] = useState<Duty[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTeacherDuties = async () => {
+      try {
+        setLoading(true);
+        const allocations = await getTeacherAllocations();
+        setDuties(allocations);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching teacher duties:', err);
+        setError('Failed to load duties. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchTeacherDuties();
+    }
+  }, [user]);
+
   return (
     <div className="relative bg-[#F0F7F4] min-h-screen"> {/* Light pastel green background */}
       
@@ -19,10 +64,32 @@ const DutiesPage = () => {
 
         {/* Right Side: Navigation Buttons */}
         <div className="flex gap-4">
-          <button className="text-gray-800 hover:text-gray-900 font-medium">Dashboard</button>
-          <button className="text-gray-800 hover:text-gray-900 font-medium">Timetable</button>
-          <button className="text-gray-800 hover:text-gray-900 font-medium">Settings</button>
-          <button className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A]">
+          <button 
+            onClick={() => navigate('/teacher/dashboard')} 
+            className="text-gray-800 hover:text-gray-900 font-medium"
+          >
+            Dashboard
+          </button>
+          <button 
+            onClick={() => navigate('/teacher/timetable')} 
+            className="text-gray-800 hover:text-gray-900 font-medium"
+          >
+            Timetable
+          </button>
+          <button 
+            onClick={() => navigate('/teacher/settings')} 
+            className="text-gray-800 hover:text-gray-900 font-medium"
+          >
+            Settings
+          </button>
+          <button 
+            onClick={() => {
+              // Implement logout functionality
+              // This would typically involve clearing auth state
+              navigate('/login');
+            }} 
+            className="px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A]"
+          >
             Logout
           </button>
         </div>
@@ -56,21 +123,43 @@ const DutiesPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { subject: "Mathematics", room: "Room 101", date: "March 10, 2025", time: "10:00 AM - 1:00 PM" },
-                  { subject: "Physics", room: "Room 203", date: "March 12, 2025", time: "2:00 PM - 5:00 PM" },
-                  { subject: "Computer Science", room: "Lab 5", date: "March 15, 2025", time: "9:00 AM - 12:00 PM" }
-                ].map((duty, index) => (
-                  <tr
-                    key={index}
-                    className="border-t border-gray-200 hover:bg-[#D6E8DB] transition-all duration-200 ease-in-out"
-                  >
-                    <td className="py-4 px-6">{duty.subject}</td>
-                    <td className="py-4 px-6">{duty.room}</td>
-                    <td className="py-4 px-6">{duty.date}</td>
-                    <td className="py-4 px-6">{duty.time}</td>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center">
+                      <div className="flex justify-center items-center space-x-2">
+                        <Loader className="animate-spin h-5 w-5 text-[#9FC0AE]" />
+                        <span>Loading duties...</span>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-red-500">{error}</td>
+                  </tr>
+                ) : duties.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-gray-500">No duties assigned yet.</td>
+                  </tr>
+                ) : (
+                  duties.map((duty) => {
+                    // Find the room from blocks if available
+                    const room = duty.blocks && duty.blocks.length > 0 
+                      ? duty.blocks.find(block => block.invigilator === user?.id)?.location || duty.blocks[0].location
+                      : 'Not specified';
+                    
+                    return (
+                      <tr
+                        key={duty._id}
+                        className="border-t border-gray-200 hover:bg-[#D6E8DB] transition-all duration-200 ease-in-out"
+                      >
+                        <td className="py-4 px-6">{duty.subject}</td>
+                        <td className="py-4 px-6">{room}</td>
+                        <td className="py-4 px-6">{new Date(duty.date).toLocaleDateString()}</td>
+                        <td className="py-4 px-6">{`${duty.startTime} - ${duty.endTime}`}</td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
