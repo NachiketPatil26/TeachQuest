@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import User from '../models/User';
+import Exam from '../models/Exam';
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
@@ -176,10 +177,28 @@ export const getTeachers = async (req: Request, res: Response) => {
   }
 };
 
-export default {
-  loginUser,
-  registerUser,
-  getUserProfile,
-  updateUserProfile,
-  getTeachers
+export const getTeacherAllocations = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id || req.user?.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    // Find all exams where this teacher is allocated
+    const exams = await Exam.find({
+      $or: [
+        { allocatedTeachers: teacherId },
+        { 'blocks.invigilator': teacherId }
+      ]
+    }).populate('blocks.invigilator', 'name email').sort({ date: 1, startTime: 1 });
+    
+    res.json(exams);
+  } catch (error: any) {
+    console.error('Get teacher allocations error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
 };
