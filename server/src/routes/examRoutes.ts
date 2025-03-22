@@ -9,7 +9,8 @@ import {
   updateExamBlock,
   allocateTeachers,
   addBlock,
-  deleteBlock
+  deleteBlock,
+  autoAllocateTeachers
 } from '../controllers/examController';
 import { protect, adminOnly as admin } from '../middleware/auth';
 
@@ -55,6 +56,12 @@ router.route('/:id/blocks/:blockNumber')
   })
   .delete(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
     await deleteBlock(req, res);
+  });
+
+// Auto-allocation endpoint
+router.route('/:id/auto-allocate')
+  .post(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await autoAllocateTeachers(req, res);
   });
 
 export default router;

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Exam from '../models/Exam';
 
 interface ExamRequest extends Request {
@@ -407,6 +408,217 @@ export const deleteBlock = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Delete block error:', error);
     res.status(500).json({ message: 'Failed to delete block', error: error.message });
+  }
+};
+
+
+// Auto-allocate teachers to an exam
+export const autoAllocateTeachers = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    // Find the exam
+    const exam = await Exam.findById(id);
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
+    }
+    
+    // Check if the exam has blocks defined
+    if (!exam.blocks || exam.blocks.length === 0) {
+      return res.status(400).json({ message: 'This exam has no blocks defined. Please add blocks to this exam before auto-allocating teachers.' });
+    }
+
+    // Get all teachers
+    const User = mongoose.model('User');
+    const teachers = await User.find({ role: 'teacher', active: true });
+    if (!teachers || teachers.length === 0) {
+      return res.status(400).json({ message: 'No active teachers found' });
+    }
+
+    // Get all exams to check for conflicts
+    const allExams = await Exam.find({
+      date: exam.date,
+      _id: { $ne: exam._id } // Exclude current exam
+    });
+
+    // Filter teachers by availability (day of week)
+    const examDate = new Date(exam.date);
+    const weekday = examDate.toLocaleDateString('en-US', { weekday: 'long' });
+    
+    // Get teachers who are available on this day
+    const availableTeachers = teachers.filter(teacher => 
+      teacher.availability && teacher.availability.includes(weekday)
+    );
+
+    if (availableTeachers.length === 0) {
+      return res.status(400).json({ message: 'No teachers available on this day' });
+    }
+
+    // Filter out teachers with time conflicts
+    const teachersWithoutConflicts = availableTeachers.filter(teacher => {
+      return !allExams.some(otherExam => {
+        // Check if teacher is allocated to this exam
+        const isAllocated = otherExam.allocatedTeachers.some(t => t.toString() === teacher._id.toString());
+        
+        // Check if teacher is an invigilator in any block
+        const isInvigilator = otherExam.blocks?.some(block => 
+          block.invigilator && block.invigilator.toString() === teacher._id.toString()
+        );
+        
+        if (!isAllocated && !isInvigilator) return false;
+        
+        // Check time overlap
+        const otherStart = otherExam.startTime;
+        const otherEnd = otherExam.endTime;
+        const examStart = exam.startTime;
+        const examEnd = exam.endTime;
+        
+        // Time overlap check: not (end1 <= start2 or end2 <= start1)
+        return !(otherEnd <= examStart || examEnd <= otherStart);
+      });
+    });
+
+    if (teachersWithoutConflicts.length === 0) {
+      return res.status(400).json({ message: 'All available teachers have time conflicts' });
+    }
+
+    // Sort teachers by subject expertise (prioritize those who teach the subject)
+    const sortedTeachers = [...teachersWithoutConflicts].sort((a, b) => {
+      const aTeachesSubject = a.subjects?.some(subject => 
+        subject.toLowerCase() === exam.subject.toLowerCase() ||
+        exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
+        subject.toLowerCase().includes(exam.subject.toLowerCase())
+      ) ? 1 : 0;
+      
+      const bTeachesSubject = b.subjects?.some(subject => 
+        subject.toLowerCase() === exam.subject.toLowerCase() ||
+        exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
+        subject.toLowerCase().includes(exam.subject.toLowerCase())
+      ) ? 1 : 0;
+      
+      return bTeachesSubject - aTeachesSubject; // Sort in descending order of subject expertise
+    });
+    
+    // Get teacher workload (number of allocations)
+    const teacherWorkload = new Map();
+    
+    // Initialize workload counter for all teachers
+    sortedTeachers.forEach(teacher => {
+      teacherWorkload.set(teacher._id.toString(), 0);
+    });
+    
+    // Count existing allocations for each teacher
+    const allExamsWithAllocations = await Exam.find({});
+    allExamsWithAllocations.forEach(e => {
+      // Count general allocations
+      if (e.allocatedTeachers && e.allocatedTeachers.length > 0) {
+        e.allocatedTeachers.forEach(teacherId => {
+          const id = teacherId.toString();
+          if (teacherWorkload.has(id)) {
+            teacherWorkload.set(id, teacherWorkload.get(id) + 1);
+          }
+        });
+      }
+      
+      // Count block invigilator assignments
+      if (e.blocks && e.blocks.length > 0) {
+        e.blocks.forEach(block => {
+          if (block.invigilator) {
+            const id = block.invigilator.toString();
+            if (teacherWorkload.has(id)) {
+              teacherWorkload.set(id, teacherWorkload.get(id) + 1);
+            }
+          }
+        });
+      }
+    });
+    
+    // Sort teachers by workload (ascending) and then by subject expertise (descending)
+    const sortedByWorkload = [...sortedTeachers].sort((a, b) => {
+      const aWorkload = teacherWorkload.get(a._id.toString()) || 0;
+      const bWorkload = teacherWorkload.get(b._id.toString()) || 0;
+      
+      // First sort by workload (ascending)
+      if (aWorkload !== bWorkload) {
+        return aWorkload - bWorkload;
+      }
+      
+      // If workload is the same, sort by subject expertise (descending)
+      const aTeachesSubject = a.subjects?.some(subject => 
+        subject.toLowerCase() === exam.subject.toLowerCase() ||
+        exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
+        subject.toLowerCase().includes(exam.subject.toLowerCase())
+      ) ? 1 : 0;
+      
+      const bTeachesSubject = b.subjects?.some(subject => 
+        subject.toLowerCase() === exam.subject.toLowerCase() ||
+        exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
+        subject.toLowerCase().includes(exam.subject.toLowerCase())
+      ) ? 1 : 0;
+      
+      return bTeachesSubject - aTeachesSubject;
+    });
+    
+    // Allocate teachers to the exam based on the number of blocks
+    let numTeachersToAllocate = 0;
+    
+    // If the exam has blocks, allocate one teacher per block
+    if (exam.blocks && exam.blocks.length > 0) {
+      numTeachersToAllocate = exam.blocks.length;
+    } else {
+      // If no blocks, allocate 2-3 teachers based on subject importance
+      numTeachersToAllocate = Math.min(3, sortedByWorkload.length);
+    }
+    
+    const selectedTeachers = sortedByWorkload.slice(0, numTeachersToAllocate);
+    
+    // Update the exam with allocated teachers
+    exam.allocatedTeachers = selectedTeachers.map(teacher => teacher._id);
+    
+    // If the exam has blocks, assign invigilators to each block
+    if (exam.blocks && exam.blocks.length > 0) {
+      // Get teachers not already allocated to this exam for block assignments
+      const remainingTeachers = sortedByWorkload.filter(teacher => 
+        !selectedTeachers.some(t => t._id.toString() === teacher._id.toString())
+      );
+      
+      // Assign invigilators to blocks
+      for (let i = 0; i < exam.blocks.length; i++) {
+        const block = exam.blocks[i];
+        
+        // Skip if block already has an invigilator
+        if (block.invigilator) continue;
+        
+        // If we have remaining teachers, assign the next one with lowest workload
+        if (i < remainingTeachers.length) {
+          block.invigilator = remainingTeachers[i]._id;
+        } else if (sortedByWorkload.length > 0) {
+          // If we run out of remaining teachers, use teachers from the main pool
+          // but avoid assigning the same teacher to multiple blocks
+          const availableTeachers = sortedByWorkload.filter(teacher => 
+            !exam.blocks.some(b => 
+              b.invigilator && b.invigilator.toString() === teacher._id.toString()
+            )
+          );
+          
+          if (availableTeachers.length > 0) {
+            block.invigilator = availableTeachers[0]._id;
+          }
+        }
+      }
+    }
+    
+    // Save the updated exam
+    await exam.save();
+    
+    // Return the updated exam with populated teacher details
+    const updatedExam = await Exam.findById(id)
+      .populate('allocatedTeachers', 'name email');
+    
+    res.json(updatedExam);
+  } catch (error) {
+    console.error('Auto-allocate teachers error:', error);
+    res.status(500).json({ message: 'Failed to auto-allocate teachers', error: error.message });
   }
 };
 
