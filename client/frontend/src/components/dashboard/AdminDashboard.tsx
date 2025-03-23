@@ -186,7 +186,7 @@ export default function AdminDashboard() {
       title: 'Teacher Info',
       description: 'Manage teacher information',
       icon: <Users size={24} />,
-      onClick: () => navigate(`/admin/allocation/${selectedBranch}`),
+      onClick: () => navigate(`/admin/teachers/${selectedBranch}`),
       bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {

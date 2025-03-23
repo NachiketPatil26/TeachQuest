@@ -46,6 +46,7 @@ export const loginUser = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         branch: user.branch,
+        department: user.department,
         subjects: user.subjects,
         remuneration: user.remuneration,
         token
@@ -61,7 +62,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, phone, branch, subjects } = req.body;
+    const { name, email, password, role, phone, branch, department, subjects } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -76,6 +77,7 @@ export const registerUser = async (req: Request, res: Response) => {
       role,
       phone,
       branch: role === 'teacher' ? branch : undefined,
+      department: role === 'teacher' ? department : undefined,
       subjects: role === 'teacher' ? subjects : undefined,
       remuneration: 0
     });
@@ -128,6 +130,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       
       if (user.role === 'teacher') {
         user.branch = req.body.branch || user.branch;
+        user.department = req.body.department || user.department;
         user.subjects = req.body.subjects || user.subjects;
         user.availability = req.body.availability || user.availability;
         
@@ -158,6 +161,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
+        department: updatedUser.department,
         subjects: updatedUser.subjects,
         subjectExpertise: updatedUser.subjectExpertise,
         subjectPreferences: updatedUser.subjectPreferences,

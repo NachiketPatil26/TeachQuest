@@ -8,6 +8,7 @@ export interface IUser extends mongoose.Document {
   role: 'admin' | 'teacher';
   phone?: string;
   branch?: mongoose.Types.ObjectId;
+  department?: string;
   subjects?: string[];
   // Subject expertise levels (1-5 scale, where 5 is highest expertise)
   subjectExpertise?: { subject: string; level: number }[];
@@ -53,6 +54,10 @@ const userSchema = new mongoose.Schema<IUser>(
     branch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch'
+    },
+    department: {
+      type: String,
+      trim: true
     },
     subjects: [{
       type: String,

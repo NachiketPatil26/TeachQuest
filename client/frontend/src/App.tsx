@@ -15,6 +15,7 @@ import ExamNameSelection from './components/timetable/ExamNameSelection';
 import TeacherAllocation from './components/allocation/TeacherAllocation';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
+import TeacherInfoPage from './pages/admin/TeacherInfoPage';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             <Route path="duties/:branch" element={<div>Duties Page</div>} />
             <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
             <Route path="analytics/:branch" element={<AnalyticsPage />} />
+            <Route path="teachers/:branch" element={<TeacherInfoPage />} />
           </Route>
 
           {/* Protected Teacher Routes */}
