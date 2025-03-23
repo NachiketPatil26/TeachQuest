@@ -817,7 +817,7 @@ export default function TeacherAllocation() {
                                 <div className="mt-1 text-xs text-gray-500">
                                   {examSlot.allocatedTeachers.map(teacherId => {
                                     const teacher = teachers.find(t => t._id === teacherId);
-                                    return teacher ? teacher.name.split(' ')[0] : '';
+                                    return teacher ? teacher.name : '';
                                   }).join(', ')}
                                 </div>
                               )}

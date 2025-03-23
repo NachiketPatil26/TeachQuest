@@ -24,36 +24,13 @@ const generateAvailabilityDays = () => {
 };
 
 const teacherData = [
+
   {
-    name: 'Dr. Sarah Johnson',
-    email: 'sarah.johnson@teachquest.edu',
-    password: 'password123', // This should be changed in production
-    role: 'teacher',
-    subjects: ['Mathematics', 'AOA'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7890',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
-  },
-  {
-    name: 'Prof. Michael Chen',
-    email: 'michael.chen@teachquest.edu',
+    name: 'Mrs. Deepti Jeetu Janjani',
+    email: 'deepti@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Chemistry', 'DBMS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7891',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
-  },
-  {
-    name: 'Dr. Emily Rodriguez',
-    email: 'emily.rodriguez@teachquest.edu',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['Computer Science', 'Mathematics'],
+    subjects: ['ML', 'AI','AOA'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7892',
@@ -61,11 +38,11 @@ const teacherData = [
     remuneration: 1000
   },
   {
-    name: 'Prof. David Kim',
-    email: 'david.kim@teachquest.edu',
+    name: 'Mrs.Monal Nilesh Malge',
+    email: 'monal@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Physics', 'Chemistry'],
+    subjects: ['DLCOA', 'MP'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7893',
@@ -73,11 +50,11 @@ const teacherData = [
     remuneration: 1000
   },
   {
-    name: 'Dr. Lisa Thompson',
-    email: 'lisa.thompson@teachquest.edu',
+    name: 'Mrs. Irin Anna Solomone',
+    email: 'irun@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['English', 'CS'],
+    subjects: ['DGST', 'CS'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7894',
@@ -85,11 +62,11 @@ const teacherData = [
     remuneration: 1000
   },
   {
-    name: 'Prof. James Wilson',
-    email: 'james.wilson@teachquest.edu',
+    name: 'Mrs. Amita Priyadarshan Su',
+    email: 'amita@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Geography', 'History'],
+    subjects: ['AI', 'DBMS'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7895',
@@ -97,11 +74,11 @@ const teacherData = [
     remuneration: 1000
   },
   {
-    name: 'Dr. Maria Garcia',
-    email: 'maria.garcia@teachquest.edu',
+    name: 'Mrs. Anjali Devi Milind Patil',
+    email: 'anjali@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Biology', 'Chemistry'],
+    subjects: ['SBLC', 'OS'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7896',
@@ -109,17 +86,66 @@ const teacherData = [
     remuneration: 1000
   },
   {
-    name: 'Prof. Robert Taylor',
-    email: 'robert.taylor@teachquest.edu',
+    name: 'Mrs. Aarti Raman Sonawane',
+    email: 'aarti@gmail.com',
     password: 'password123',
     role: 'teacher',
-    subjects: ['Computer Science', 'Mathematics'],
+    subjects: ['MP', 'OS'],
+    department: 'Computer Science',
+    active: true,
+    phone: '123-456-7897',
+    availability: generateAvailabilityDays(),
+    remuneration: 1000
+  },
+  {
+    name: 'Mrs. Poonam Amit Kamble',
+    email: 'poonam@gmail.com',
+    password: 'password123',
+    role: 'teacher',
+    subjects: ['Python', 'DTS'],
+    department: 'Computer Science',
+    active: true,
+    phone: '123-456-7897',
+    availability: generateAvailabilityDays(),
+    remuneration: 1000
+  },
+  {
+    name: 'Mrs. Shraddha Anant Narhari(Kawji)',
+    email: 'shraddha@gmail.com',
+    password: 'password123',
+    role: 'teacher',
+    subjects: ['DGST', 'CG'],
+    department: 'Computer Science',
+    active: true,
+    phone: '123-456-7897',
+    availability: generateAvailabilityDays(),
+    remuneration: 1000
+  },
+  {
+    name: 'Mrs. Aarpita',
+    email: 'aarpita@gmail.com',
+    password: 'password123',
+    role: 'teacher',
+    subjects: ['AOA', 'Maths'],
+    department: 'Computer Science',
+    active: true,
+    phone: '123-456-7897',
+    availability: generateAvailabilityDays(),
+    remuneration: 1000
+  },
+  {
+    name: 'Mr Mazhar Sheikh',
+    email: 'mazhar@gmail.com',
+    password: 'password123',
+    role: 'teacher',
+    subjects: ['Maths'],
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
     availability: generateAvailabilityDays(),
     remuneration: 1000
   }
+
 ];
 
 async function populateTeachers() {

@@ -209,21 +209,43 @@ export const getTeacherAllocations = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Teacher ID is required' });
     }
 
+    // Verify if the teacher exists
+    const teacher = await User.findById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
     // Find all exams where this teacher is allocated
     const exams = await Exam.find({
       $or: [
         { allocatedTeachers: teacherId },
         { 'blocks.invigilator': teacherId }
-      ]
-    }).populate('blocks.invigilator', 'name email').sort({ date: 1, startTime: 1 });
+      ],
+      date: { $gte: new Date() } // Only fetch upcoming and current exams
+    })
+    .populate('blocks.invigilator', 'name email')
+    .populate('subject')
+    .sort({ date: 1, startTime: 1 });
     
+    if (!exams) {
+      return res.status(404).json({ message: 'No allocations found for this teacher' });
+    }
+
     res.json(exams);
   } catch (error: any) {
     console.error('Get teacher allocations error:', {
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
+      teacherId: req.params.id || req.user?.id
     });
-    res.status(500).json({ message: 'Server error' });
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid teacher ID format' });
+    }
+
+    res.status(500).json({ 
+      message: 'Failed to fetch teacher allocations. Please try again later.'
+    });
   }
 };
 
@@ -459,6 +481,77 @@ export const deleteTeacher = async (req: Request, res: Response) => {
 };
 
 // Update teacher information
+// Get teacher statistics
+export const getTeacherStats = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id || req.user?.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+    
+    const user = await User.findById(teacherId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (user.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+
+    // Get all exams where this teacher is allocated
+    const exams = await Exam.find({
+      $or: [
+        { allocatedTeachers: teacherId },
+        { 'blocks.invigilator': teacherId }
+      ]
+    });
+
+    const now = new Date();
+    
+    // Calculate statistics
+    const stats = {
+      totalAllocations: exams.length,
+      upcomingDuties: exams.filter(exam => new Date(exam.date) > now).length,
+      completedDuties: exams.filter(exam => new Date(exam.date) < now).length,
+      currentDuties: exams.filter(exam => {
+        const examDate = new Date(exam.date);
+        return examDate.getDate() === now.getDate() &&
+               examDate.getMonth() === now.getMonth() &&
+               examDate.getFullYear() === now.getFullYear();
+      }).length,
+      subjectWiseAllocations: {},
+      branchWiseAllocations: {}
+    };
+
+    // Calculate subject-wise and branch-wise allocations
+    exams.forEach(exam => {
+      // Subject-wise allocations
+      if (stats.subjectWiseAllocations[exam.subject]) {
+        stats.subjectWiseAllocations[exam.subject]++;
+      } else {
+        stats.subjectWiseAllocations[exam.subject] = 1;
+      }
+
+      // Branch-wise allocations
+      if (stats.branchWiseAllocations[exam.branch]) {
+        stats.branchWiseAllocations[exam.branch]++;
+      } else {
+        stats.branchWiseAllocations[exam.branch] = 1;
+      }
+    });
+
+    res.json(stats);
+  } catch (error: any) {
+    console.error('Get teacher stats error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 export const updateTeacher = async (req: Request, res: Response) => {
   try {
     const teacherId = req.params.id;

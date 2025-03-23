@@ -9,6 +9,7 @@ import RemunerationPage from './pages/teacher/RemunerationPage';
 import NotificationsPage from './pages/teacher/NotificationsPage';
 import SchedulePage from './pages/teacher/SchedulePage';
 import ReportsPage from './pages/teacher/ReportsPage';
+import SupportPage from './pages/teacher/SupportPage';
 import ExamTimetable from './components/timetable/ExamTimetable';
 import SemesterSelection from './components/timetable/SemesterSelection';
 import ExamNameSelection from './components/timetable/ExamNameSelection';
@@ -48,6 +49,7 @@ function App() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="remuneration" element={<RemunerationPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="support" element={<SupportPage />} />
           </Route>
 
           {/* Fallback Route */}

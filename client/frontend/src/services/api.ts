@@ -209,9 +209,15 @@ export const getTeacherAllocations = async (teacherId?: string) => {
   try {
     const url = teacherId ? `/api/users/teachers/${teacherId}/allocations` : '/api/users/teachers/me/allocations';
     const response = await api.get(url);
-    return response.data;
+    if (!response.data) {
+      throw new Error('No allocation data received');
+    }
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     const err = error as AxiosError;
+    if (err.response?.status === 401) {
+      throw new Error('Please log in to view your allocations');
+    }
     throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
       ? (err.response.data as { message: string }).message
       : 'Failed to fetch teacher allocations. Please try again.');

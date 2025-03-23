@@ -107,26 +107,45 @@ export default function TeacherDashboard() {
     const fetchTeacherData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
         // Fetch teacher stats
         const teacherStats = await getTeacherStats();
-        setStats(teacherStats);
+        if (!teacherStats) {
+          throw new Error('No stats data received');
+        }
+        setStats({
+          upcomingDuties: teacherStats.upcomingDuties || 0,
+          completedDuties: teacherStats.completedDuties || 0,
+          pendingReports: teacherStats.pendingReports || 0,
+          totalDuties: teacherStats.totalDuties || 0
+        });
         
         // Fetch upcoming duties (limit to 5 for dashboard)
         const duties = await getTeacherUpcomingDuties(undefined, 5);
-        setUpcomingDuties(duties);
-        
-        setError(null);
+        if (!duties || !Array.isArray(duties)) {
+          throw new Error('Invalid duties data received');
+        }
+        setUpcomingDuties(duties.map(duty => ({
+          _id: duty._id,
+          subject: duty.subject,
+          date: duty.date,
+          startTime: duty.startTime,
+          endTime: duty.endTime,
+          status: duty.status || 'scheduled'
+        })));
       } catch (err) {
         console.error('Error fetching teacher data:', err);
-        setError('Failed to load teacher data. Please try again later.');
+        setError(err instanceof Error ? err.message : 'Failed to load teacher data. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
+    if (user?.id) {
       fetchTeacherData();
+    } else {
+      setError('Please log in to view your dashboard');
     }
     
     // Update current time every minute
