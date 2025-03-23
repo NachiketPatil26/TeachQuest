@@ -183,8 +183,8 @@ export default function AdminDashboard() {
       bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
     },
     {
-      title: 'Teacher Allocation',
-      description: 'Manage exam duty assignments',
+      title: 'Teacher Info',
+      description: 'Manage teacher information',
       icon: <Users size={24} />,
       onClick: () => navigate(`/admin/allocation/${selectedBranch}`),
       bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'

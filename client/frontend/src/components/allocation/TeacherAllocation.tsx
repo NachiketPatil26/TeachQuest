@@ -1060,7 +1060,7 @@ export default function TeacherAllocation() {
                   className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
-                  {autoAllocating ? 'Auto-Allocating...' : 'Auto-Allocate All Exams with AI'}
+                  {autoAllocating ? 'Auto-Allocating...' : 'Auto-Allocate All Exams'}
                 </button>
               </div>
             </div>
@@ -1103,7 +1103,7 @@ export default function TeacherAllocation() {
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
                       Processing...
                     </>
-                  ) : 'Auto-Allocate with AI'}
+                  ) : 'Auto-Allocate'}
                 </button>
               </div>
             </div>

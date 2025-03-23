@@ -129,6 +129,22 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       if (user.role === 'teacher') {
         user.branch = req.body.branch || user.branch;
         user.subjects = req.body.subjects || user.subjects;
+        user.availability = req.body.availability || user.availability;
+        
+        // Update subject expertise if provided
+        if (req.body.subjectExpertise) {
+          user.subjectExpertise = req.body.subjectExpertise;
+        }
+        
+        // Update subject preferences if provided
+        if (req.body.subjectPreferences) {
+          user.subjectPreferences = req.body.subjectPreferences;
+        }
+        
+        // Update time preferences if provided
+        if (req.body.timePreferences) {
+          user.timePreferences = req.body.timePreferences;
+        }
       }
 
       if (req.body.password) {
@@ -143,13 +159,17 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         email: updatedUser.email,
         role: updatedUser.role,
         subjects: updatedUser.subjects,
+        subjectExpertise: updatedUser.subjectExpertise,
+        subjectPreferences: updatedUser.subjectPreferences,
+        timePreferences: updatedUser.timePreferences,
+        availability: updatedUser.availability,
         token: generateToken(updatedUser._id),
       });
     } else {
       res.status(404).json({ message: 'User not found' });
     }
   } catch (error: any) {
-    console.error('Login error:', {
+    console.error('Update user profile error:', {
       message: error.message,
       stack: error.stack
     });
@@ -196,6 +216,130 @@ export const getTeacherAllocations = async (req: Request, res: Response) => {
     res.json(exams);
   } catch (error: any) {
     console.error('Get teacher allocations error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update teacher expertise levels
+export const updateTeacherExpertise = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id || req.user?.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+    
+    const { subjectExpertise } = req.body;
+    
+    if (!subjectExpertise || !Array.isArray(subjectExpertise)) {
+      return res.status(400).json({ message: 'Subject expertise data is required and must be an array' });
+    }
+    
+    // Validate expertise data
+    for (const entry of subjectExpertise) {
+      if (!entry.subject || typeof entry.level !== 'number' || entry.level < 1 || entry.level > 5) {
+        return res.status(400).json({ 
+          message: 'Each expertise entry must have a subject name and level between 1-5' 
+        });
+      }
+    }
+    
+    const user = await User.findById(teacherId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (user.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+    
+    user.subjectExpertise = subjectExpertise;
+    await user.save();
+    
+    res.json({
+      _id: user._id,
+      name: user.name,
+      subjectExpertise: user.subjectExpertise
+    });
+  } catch (error: any) {
+    console.error('Update teacher expertise error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update teacher preferences
+export const updateTeacherPreferences = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id || req.user?.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+    
+    const { subjectPreferences, timePreferences } = req.body;
+    
+    if ((!subjectPreferences || !Array.isArray(subjectPreferences)) && 
+        (!timePreferences || !Array.isArray(timePreferences))) {
+      return res.status(400).json({ 
+        message: 'At least one of subject preferences or time preferences must be provided as arrays' 
+      });
+    }
+    
+    const user = await User.findById(teacherId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (user.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+    
+    // Update subject preferences if provided
+    if (subjectPreferences && Array.isArray(subjectPreferences)) {
+      // Validate subject preferences
+      for (const entry of subjectPreferences) {
+        if (!entry.subject || typeof entry.preference !== 'number' || 
+            entry.preference < 1 || entry.preference > 5) {
+          return res.status(400).json({ 
+            message: 'Each subject preference entry must have a subject name and preference level between 1-5' 
+          });
+        }
+      }
+      user.subjectPreferences = subjectPreferences;
+    }
+    
+    // Update time preferences if provided
+    if (timePreferences && Array.isArray(timePreferences)) {
+      // Validate time preferences
+      for (const entry of timePreferences) {
+        if (!entry.slot || typeof entry.preference !== 'number' || 
+            entry.preference < 1 || entry.preference > 5) {
+          return res.status(400).json({ 
+            message: 'Each time preference entry must have a time slot and preference level between 1-5' 
+          });
+        }
+      }
+      user.timePreferences = timePreferences;
+    }
+    
+    await user.save();
+    
+    res.json({
+      _id: user._id,
+      name: user.name,
+      subjectPreferences: user.subjectPreferences,
+      timePreferences: user.timePreferences
+    });
+  } catch (error: any) {
+    console.error('Update teacher preferences error:', {
       message: error.message,
       stack: error.stack
     });
