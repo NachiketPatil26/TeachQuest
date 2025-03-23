@@ -817,7 +817,7 @@ export default function TeacherAllocation() {
                                 <div className="mt-1 text-xs text-gray-500">
                                   {examSlot.allocatedTeachers.map(teacherId => {
                                     const teacher = teachers.find(t => t._id === teacherId);
-                                    return teacher ? teacher.name.split(' ')[0] : '';
+                                    return teacher ? teacher.name : '';
                                   }).join(', ')}
                                 </div>
                               )}
@@ -1060,7 +1060,7 @@ export default function TeacherAllocation() {
                   className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
                 >
                   <Sparkles className="mr-2 h-5 w-5" />
-                  {autoAllocating ? 'Auto-Allocating...' : 'Auto-Allocate All Exams with AI'}
+                  {autoAllocating ? 'Auto-Allocating...' : 'Auto-Allocate All Exams'}
                 </button>
               </div>
             </div>
@@ -1074,7 +1074,7 @@ export default function TeacherAllocation() {
               <h3 className="text-lg font-medium mb-4">Confirm Auto-Allocation</h3>
               <div className="mb-4">
                 <p className="text-gray-600 mb-2">
-                  You are about to automatically allocate teachers to all exam slots and blocks using AI.
+                  You are about to automatically allocate teachers to all exam slots and blocks.
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-500">
@@ -1103,7 +1103,7 @@ export default function TeacherAllocation() {
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
                       Processing...
                     </>
-                  ) : 'Auto-Allocate with AI'}
+                  ) : 'Auto-Allocate'}
                 </button>
               </div>
             </div>

@@ -8,7 +8,14 @@ export interface IUser extends mongoose.Document {
   role: 'admin' | 'teacher';
   phone?: string;
   branch?: mongoose.Types.ObjectId;
+  department?: string;
   subjects?: string[];
+  // Subject expertise levels (1-5 scale, where 5 is highest expertise)
+  subjectExpertise?: { subject: string; level: number }[];
+  // Subject preferences (1-5 scale, where 5 is highest preference)
+  subjectPreferences?: { subject: string; preference: number }[];
+  // Time slot preferences (1-5 scale, where 5 is highest preference)
+  timePreferences?: { slot: string; preference: number }[];
   availability?: ('Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday')[];
   remuneration: number;
   tokens: { token: string }[];
@@ -48,9 +55,52 @@ const userSchema = new mongoose.Schema<IUser>(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Branch'
     },
+    department: {
+      type: String,
+      trim: true
+    },
     subjects: [{
       type: String,
       trim: true
+    }],
+    // Subject expertise levels (1-5 scale, where 5 is highest expertise)
+    subjectExpertise: [{
+      subject: {
+        type: String,
+        trim: true
+      },
+      level: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: 3
+      }
+    }],
+    // Subject preferences (1-5 scale, where 5 is highest preference)
+    subjectPreferences: [{
+      subject: {
+        type: String,
+        trim: true
+      },
+      preference: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: 3
+      }
+    }],
+    // Time slot preferences (1-5 scale, where 5 is highest preference)
+    timePreferences: [{
+      slot: {
+        type: String,
+        trim: true
+      },
+      preference: {
+        type: Number,
+        min: 1,
+        max: 5,
+        default: 3
+      }
     }],
     availability: [{
       type: String,
