@@ -9,6 +9,10 @@ import * as notificationController from './controllers/notificationController';
 import * as branchController from './controllers/branchController';
 import * as examController from './controllers/examController';
 import examRoutes from './routes/examRoutes';
+import branchRoutes from './routes/branchRoutes';
+import userRoutes from './routes/userRoutes';
+import teacherRoutes from './routes/teacherRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import User from './models/User';
 
 // Error handling interface
@@ -75,6 +79,10 @@ app.put('/api/exams/:id', examController.updateExam as unknown as express.Reques
 app.delete('/api/exams/:id', examController.deleteExam as unknown as express.RequestHandler);
 app.post('/api/exams/:id/allocate', examController.allocateTeachers as unknown as express.RequestHandler);
 app.use('/api/exams', examRoutes);
+app.use('/api/branches', branchRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/users/teachers', teacherRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Branch Routes
 app.get('/api/branches', protect as unknown as express.RequestHandler, async (req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> => {
@@ -122,9 +130,10 @@ app.delete('/api/branches/:id/teachers', protect as unknown as express.RequestHa
 
 // Teacher Routes
 app.use('/api/teacher', protect as unknown as express.RequestHandler, teacherOnly as express.RequestHandler);
-app.get('/api/notifications', (notificationController.getUserNotifications as unknown as express.RequestHandler));
-app.put('/api/notifications/:id/read', (notificationController.markAsRead as unknown as express.RequestHandler));
-app.get('/api/remuneration', (async (req: express.Request, res: express.Response) => {
+app.get('/api/notifications', protect as unknown as express.RequestHandler, (notificationController.getUserNotifications as unknown as express.RequestHandler));
+app.put('/api/notifications/:id/read', protect as unknown as express.RequestHandler, (notificationController.markAsRead as unknown as express.RequestHandler));
+app.post('/api/notifications', protect as unknown as express.RequestHandler, (notificationController.createNotification as unknown as express.RequestHandler));
+app.get('/api/remuneration', protect as unknown as express.RequestHandler, (async (req: express.Request, res: express.Response) => {
   try {
     const user = await User.findById((req as any).user?.id);
     if (!user) {

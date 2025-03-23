@@ -70,7 +70,13 @@ api.interceptors.request.use(
 // Auth APIs
 export const login = async (email: string, password: string, role: 'admin' | 'teacher') => {
   try {
-    const response = await api.post('/api/auth/login', { email, password, role });
+    const response = await api.post('/api/users/login', { email, password, role });
+    
+    // Store token in localStorage for API interceptor to use
+    if (response.data && response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
@@ -150,6 +156,42 @@ export const getTeachers = async () => {
   return response.data;
 };
 
+export const createTeacher = async (teacherData: TeacherData) => {
+  try {
+    const response = await api.post('/api/users/teachers', teacherData);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to create teacher. Please try again.');
+  }
+};
+
+export const updateTeacher = async (teacherId: string, teacherData: Partial<TeacherData>) => {
+  try {
+    const response = await api.put(`/api/users/teachers/${teacherId}`, teacherData);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to update teacher. Please try again.');
+  }
+};
+
+export const deleteTeacher = async (teacherId: string) => {
+  try {
+    const response = await api.delete(`/api/users/teachers/${teacherId}`);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to delete teacher. Please try again.');
+  }
+};
+
 export const updateTeacherProfile = async (userData: Partial<TeacherData>) => {
   try {
     const response = await api.put('/api/users/profile', userData);
@@ -159,6 +201,58 @@ export const updateTeacherProfile = async (userData: Partial<TeacherData>) => {
     throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
       ? (err.response.data as { message: string }).message
       : 'Failed to update profile. Please try again.');
+  }
+};
+
+// Teacher allocation APIs
+export const getTeacherAllocations = async (teacherId?: string) => {
+  try {
+    const url = teacherId ? `/api/users/teachers/${teacherId}/allocations` : '/api/users/teachers/me/allocations';
+    const response = await api.get(url);
+    if (!response.data) {
+      throw new Error('No allocation data received');
+    }
+    return Array.isArray(response.data) ? response.data : [];
+  } catch (error) {
+    const err = error as AxiosError;
+    if (err.response?.status === 401) {
+      throw new Error('Please log in to view your allocations');
+    }
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to fetch teacher allocations. Please try again.');
+  }
+};
+
+export const getTeacherStats = async (teacherId?: string) => {
+  try {
+    const url = teacherId ? `/api/users/teachers/${teacherId}/stats` : '/api/users/teachers/me/stats';
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to fetch teacher statistics. Please try again.');
+  }
+};
+
+export const getTeacherUpcomingDuties = async (teacherId?: string, limit?: number) => {
+  try {
+    const params = new URLSearchParams();
+    if (limit) params.append('limit', limit.toString());
+    
+    const url = teacherId 
+      ? `/api/users/teachers/${teacherId}/duties/upcoming?${params.toString()}` 
+      : `/api/users/teachers/me/duties/upcoming?${params.toString()}`;
+    
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to fetch upcoming duties. Please try again.');
   }
 };
 
@@ -287,13 +381,26 @@ export const deleteBlock = async (examId: string, blockNumber: number) => {
 
 export const assignInvigilator = async (examId: string, blockNumber: number, teacherId: string) => {
   try {
-    const response = await api.post(`/api/exams/${examId}/blocks/${blockNumber}/invigilator`, { teacherId });
+    const response = await api.post(`/api/exams/${examId}/blocks/${blockNumber}/invigilator`, { invigilatorId: teacherId });
     return response.data;
   } catch (error) {
     const err = error as AxiosError;
     throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
       ? (err.response.data as { message: string }).message
       : 'Failed to assign invigilator. Please try again.');
+  }
+};
+
+// Auto allocate teachers to an exam
+export const autoAllocateTeachers = async (examId: string) => {
+  try {
+    const response = await api.post(`/api/exams/${examId}/auto-allocate`);
+    return response.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    throw new Error(typeof err.response?.data === 'object' && 'message' in (err.response?.data || {})
+      ? (err.response.data as { message: string }).message
+      : 'Failed to auto-allocate teachers. Please try again.');
   }
 };
 

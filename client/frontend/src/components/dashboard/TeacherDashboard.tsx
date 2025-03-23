@@ -16,6 +16,23 @@ import {
 } from 'lucide-react';
 import LogoTeacherDashboard from '../../assets/TeachQuestLogo.png';
 import TeacherDashboardImage from '../../assets/Teacher-pana.png';
+import { getTeacherStats, getTeacherUpcomingDuties } from '../../services/api';
+
+interface TeacherStats {
+  upcomingDuties: number;
+  completedDuties: number;
+  pendingReports: number;
+  totalDuties: number;
+}
+
+interface UpcomingDuty {
+  _id: string;
+  subject: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: 'scheduled' | 'in-progress' | 'completed';
+}
 // CardSkeleton Component
 function CardSkeleton() {
   return (
@@ -82,14 +99,59 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [stats, setStats] = useState<TeacherStats | null>(null);
+  const [upcomingDuties, setUpcomingDuties] = useState<UpcomingDuty[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading data
-    setTimeout(() => setLoading(false), 1000);
+    const fetchTeacherData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Fetch teacher stats
+        const teacherStats = await getTeacherStats();
+        if (!teacherStats) {
+          throw new Error('No stats data received');
+        }
+        setStats({
+          upcomingDuties: teacherStats.upcomingDuties || 0,
+          completedDuties: teacherStats.completedDuties || 0,
+          pendingReports: teacherStats.pendingReports || 0,
+          totalDuties: teacherStats.totalDuties || 0
+        });
+        
+        // Fetch upcoming duties (limit to 5 for dashboard)
+        const duties = await getTeacherUpcomingDuties(undefined, 5);
+        if (!duties || !Array.isArray(duties)) {
+          throw new Error('Invalid duties data received');
+        }
+        setUpcomingDuties(duties.map(duty => ({
+          _id: duty._id,
+          subject: duty.subject,
+          date: duty.date,
+          startTime: duty.startTime,
+          endTime: duty.endTime,
+          status: duty.status || 'scheduled'
+        })));
+      } catch (err) {
+        console.error('Error fetching teacher data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load teacher data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.id) {
+      fetchTeacherData();
+    } else {
+      setError('Please log in to view your dashboard');
+    }
+    
     // Update current time every minute
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const dashboardCards = [
     {
@@ -265,29 +327,46 @@ export default function TeacherDashboard() {
 </div>
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatsCard
-            title="Upcoming Duties"
-            value="3"
-            trend={0}
-              className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
-          />
-          <StatsCard
-            title="Completed Duties"
-            value="12"
-            trend={8}
-              className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
-          />
-          <StatsCard
-            title="Pending Reports"
-            value="2"
-            trend={-1}
-              
-            
-
-
-
-            
-          />
+          {loading ? (
+            <>
+              <div className="p-6 bg-white rounded-lg shadow-md animate-pulse">
+                <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
+                <div className="h-10 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow-md animate-pulse">
+                <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
+                <div className="h-10 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow-md animate-pulse">
+                <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
+                <div className="h-10 bg-gray-300 rounded w-1/2 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+              </div>
+            </>
+          ) : (
+            <>
+              <StatsCard
+                title="Upcoming Duties"
+                value={stats?.upcomingDuties || 0}
+                trend={0}
+                className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+              />
+              <StatsCard
+                title="Completed Duties"
+                value={stats?.completedDuties || 0}
+                trend={0}
+                className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+              />
+              <StatsCard
+                title="Pending Reports"
+                value={stats?.pendingReports || 0}
+                trend={0}
+                className="transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-lg"
+              />
+            </>
+          )}
         </div>
 
         {/* Upcoming Duties Section */}
@@ -315,26 +394,57 @@ export default function TeacherDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                <tr className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-15</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Mathematics</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">09:00 AM</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
-                    <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                      Confirmed
-                    </span>
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">2024-03-16</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">Physics</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">10:00 AM</td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
-                    <span className="inline-flex items-center rounded-full bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-700 ring-1 ring-inset ring-yellow-600/20">
-                      Pending
-                    </span>
-                  </td>
-                </tr>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                      <div className="flex justify-center items-center space-x-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+                        <span>Loading duties...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-sm text-red-500">
+                      {error}
+                    </td>
+                  </tr>
+                ) : upcomingDuties.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                      No upcoming duties found.
+                    </td>
+                  </tr>
+                ) : (
+                  upcomingDuties.map((duty) => (
+                    <tr key={duty._id} className="hover:bg-gray-50">
+                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                        {new Date(duty.date).toLocaleDateString()}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {duty.subject}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {duty.startTime} - {duty.endTime}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm">
+                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                          duty.status === 'scheduled' 
+                            ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20' 
+                            : duty.status === 'in-progress' 
+                            ? 'bg-blue-50 text-blue-700 ring-blue-600/20' 
+                            : 'bg-green-50 text-green-700 ring-green-600/20'
+                        }`}>
+                          {duty.status === 'scheduled' 
+                            ? 'Scheduled' 
+                            : duty.status === 'in-progress' 
+                            ? 'In Progress' 
+                            : 'Completed'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

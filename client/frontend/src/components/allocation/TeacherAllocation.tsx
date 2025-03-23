@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Check, AlertCircle, Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
-import { getTeachers, getExams, allocateTeachers, assignInvigilator } from '../../services/api';
+import { Check, AlertCircle, Calendar, Clock, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { getTeachers, getExams, allocateTeachers, assignInvigilator, autoAllocateTeachers } from '../../services/api';
+import api from '../../services/api';
 
 import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 
@@ -37,6 +38,12 @@ interface ExamSlot {
 // Improved availability check with better date handling
 const isTeacherAvailable = (teacher: Teacher, examDate: string): boolean => {
   if (!teacher.availability || !Array.isArray(teacher.availability) || teacher.availability.length === 0) {
+    console.log(`Teacher ${teacher.name} has no availability data`);
+    return false;
+  }
+  
+  if (!examDate) {
+    console.error('No exam date provided for availability check');
     return false;
   }
   
@@ -52,7 +59,9 @@ const isTeacherAvailable = (teacher: Teacher, examDate: string): boolean => {
     const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
     
     // Check if the teacher is available on this weekday
-    return teacher.availability.includes(weekday);
+    const isAvailable = teacher.availability.includes(weekday);
+
+    return isAvailable;
   } catch (error) {
     console.error('Error checking teacher availability:', error);
     return false;
@@ -74,30 +83,64 @@ const isTeacherQualified = (teacher: Teacher, examSubject: string): boolean => {
 
 // Check if teacher is allocated to another exam on the same day and time
 const hasTimeConflict = (teacher: Teacher, examSlot: ExamSlot, allExamSlots: ExamSlot[]): boolean => {
-  if (!examSlot.date || !examSlot.startTime || !examSlot.endTime) return false;
+  if (!examSlot.date || !examSlot.startTime || !examSlot.endTime) {
+    console.log('Missing date or time information for exam slot');
+    return false;
+  }
   
-  const examDate = new Date(examSlot.date).toISOString().split('T')[0];
-  
-  return allExamSlots.some(slot => {
-    // Skip the current exam slot
-    if (slot._id === examSlot._id) return false;
+  try {
+    // Format date consistently
+    const examDate = new Date(examSlot.date);
+    if (isNaN(examDate.getTime())) {
+      console.error('Invalid exam date format:', examSlot.date);
+      return false;
+    }
     
-    // Check if teacher is allocated to this slot
-    if (!slot.allocatedTeachers?.includes(teacher._id)) return false;
+    const examDateStr = examDate.toISOString().split('T')[0];
     
-    // Check if on the same day
-    const slotDate = new Date(slot.date).toISOString().split('T')[0];
-    if (slotDate !== examDate) return false;
-    
-    // Check time overlap
-    const slotStart = slot.startTime;
-    const slotEnd = slot.endTime;
-    const examStart = examSlot.startTime;
-    const examEnd = examSlot.endTime;
-    
-    // Time overlap check: not (end1 <= start2 or end2 <= start1)
-    return !(slotEnd <= examStart || examEnd <= slotStart);
-  });
+    return allExamSlots.some(slot => {
+      // Skip the current exam slot
+      if (slot._id === examSlot._id) return false;
+      
+      // Check if teacher is allocated to this slot or is an invigilator in any block
+      const isAllocated = slot.allocatedTeachers?.includes(teacher._id);
+      const isInvigilator = slot.blocks?.some(block => block.invigilator === teacher._id);
+      
+      if (!isAllocated && !isInvigilator) return false;
+      
+      // Check if on the same day
+      if (!slot.date) return false;
+      
+      const slotDate = new Date(slot.date);
+      if (isNaN(slotDate.getTime())) {
+        console.error('Invalid slot date format:', slot.date);
+        return false;
+      }
+      
+      const slotDateStr = slotDate.toISOString().split('T')[0];
+      if (slotDateStr !== examDateStr) return false;
+      
+      // Check time overlap
+      if (!slot.startTime || !slot.endTime) return false;
+      
+      const slotStart = slot.startTime;
+      const slotEnd = slot.endTime;
+      const examStart = examSlot.startTime;
+      const examEnd = examSlot.endTime;
+      
+      // Time overlap check: not (end1 <= start2 or end2 <= start1)
+      const hasOverlap = !(slotEnd <= examStart || examEnd <= slotStart);
+      
+      if (hasOverlap) {
+        console.log(`Time conflict detected for ${teacher.name} with ${slot.subject} exam`);
+      }
+      
+      return hasOverlap;
+    });
+  } catch (error) {
+    console.error('Error checking time conflict:', error);
+    return false;
+  }
 };
 
 export default function TeacherAllocation() {
@@ -113,6 +156,8 @@ export default function TeacherAllocation() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [isBlockMode, setIsBlockMode] = useState(false);
   const [allocating, setAllocating] = useState(false);
+  const [autoAllocating, setAutoAllocating] = useState(false);
+  const [showAutoAllocateConfirm, setShowAutoAllocateConfirm] = useState(false);
 
   // Clear error/notification messages after 5 seconds
   useEffect(() => {
@@ -235,7 +280,8 @@ export default function TeacherAllocation() {
       return;
     }
   
-    const examDate = new Date(slot.date).toISOString().split('T')[0];
+    // Use the formatted date for availability check
+    const examDate = slot.date; // Use the original date string
     const isAvailable = isTeacherAvailable(teacher, examDate);
     const isQualified = isTeacherQualified(teacher, slot.subject);
     const hasConflict = hasTimeConflict(teacher, slot, examSlots);
@@ -290,10 +336,10 @@ export default function TeacherAllocation() {
         }
         
         const currentTeacher = teachers.find(t => t._id === currentInvigilatorId);
-        // Ask for confirmation before replacing
-        if (window.confirm(`This will replace ${currentTeacher?.name || 'current teacher'} with ${teacher.name}. Continue?`)) {
-          setSelectedTeachers([teacherId]);
-        }
+        // Use our notification system instead of window.confirm for a more consistent UI
+        setShowConfirmDialog(false); // Close any existing dialog
+        showNotification('info', `Click again to replace ${currentTeacher?.name || 'current teacher'} with ${teacher.name}`);
+        setSelectedTeachers([teacherId]);
         return;
       }
       
@@ -469,25 +515,69 @@ export default function TeacherAllocation() {
     examId: string
   ) => {
     try {
-      await fetch('/api/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user: teacherId,
-          title,
-          message,
-          type: 'info',
-          relatedTo: {
-            model: 'Exam',
-            id: examId
-          }
-        })
+      await api.post('/api/notifications', {
+        user: teacherId,
+        title,
+        message,
+        type: 'info',
+        relatedTo: {
+          model: 'Exam',
+          id: examId
+        }
       });
     } catch (error) {
       console.error('Error creating notification:', error);
       // Don't throw - notification failure shouldn't stop the allocation process
+    }
+  };
+
+  const handleAutoAllocation = () => {
+    setShowAutoAllocateConfirm(true);
+  };
+
+  const confirmAutoAllocation = async () => {
+    try {
+      setAutoAllocating(true);
+      setError('');
+      
+      // Process each exam slot one by one
+      for (const examSlot of examSlots) {
+        console.log(`Auto-allocating teachers for ${examSlot.subject} exam`);
+        
+        // Call the auto-allocate API for this exam
+        const result = await autoAllocateTeachers(examSlot._id);
+        
+        // Create notifications for all allocated teachers
+        if (result.allocatedTeachers && result.allocatedTeachers.length > 0) {
+          for (const teacherId of result.allocatedTeachers) {
+            await createTeacherNotification(
+              teacherId,
+              'Auto-Allocated Exam Duty',
+              `You have been automatically allocated to ${examSlot.subject} exam on ${formatDate(examSlot.date)} from ${examSlot.startTime} to ${examSlot.endTime}.`,
+              examSlot._id
+            );
+          }
+        }
+      }
+      
+      // Refresh the data to show the updated allocations
+      await fetchData();
+      
+      showNotification('success', 'Auto-allocation completed successfully!');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to auto-allocate teachers';
+      console.error('Error auto-allocating teachers:', error);
+      
+      // Check if the error is about missing blocks
+      if (errorMessage.includes('no blocks defined')) {
+        setError('Auto-allocation requires exams with blocks. Please add blocks to your exams first.');
+        showNotification('info', 'Auto-allocation requires exams with blocks. Please add blocks to your exams before allocating teachers.');
+      } else {
+        setError(`Auto-allocation failed: ${errorMessage}`);
+      }
+    } finally {
+      setAutoAllocating(false);
+      setShowAutoAllocateConfirm(false);
     }
   };
 
@@ -727,7 +817,7 @@ export default function TeacherAllocation() {
                                 <div className="mt-1 text-xs text-gray-500">
                                   {examSlot.allocatedTeachers.map(teacherId => {
                                     const teacher = teachers.find(t => t._id === teacherId);
-                                    return teacher ? teacher.name.split(' ')[0] : '';
+                                    return teacher ? teacher.name : '';
                                   }).join(', ')}
                                 </div>
                               )}
@@ -961,9 +1051,64 @@ export default function TeacherAllocation() {
                   </table>
                 </div>
               )}
+              
+              {/* Auto Allocation Button */}
+              <div className="mt-8 border-t pt-6 flex justify-center">
+                <button
+                  onClick={handleAutoAllocation}
+                  disabled={autoAllocating || examSlots.length === 0}
+                  className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
+                >
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  {autoAllocating ? 'Auto-Allocating...' : 'Auto-Allocate All Exams'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Auto Allocation Confirmation Dialog */}
+        {showAutoAllocateConfirm && (
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+              <h3 className="text-lg font-medium mb-4">Confirm Auto-Allocation</h3>
+              <div className="mb-4">
+                <p className="text-gray-600 mb-2">
+                  You are about to automatically allocate teachers to all exam slots and blocks.
+                </p>
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="text-sm text-gray-500">
+                    This will consider teacher availability, subject expertise, and workload balance.
+                  </p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Any existing allocations will be replaced.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowAutoAllocateConfirm(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                  disabled={autoAllocating}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmAutoAllocation}
+                  disabled={autoAllocating}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-70 flex items-center"
+                >
+                  {autoAllocating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : 'Auto-Allocate'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
