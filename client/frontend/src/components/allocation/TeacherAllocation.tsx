@@ -1074,7 +1074,7 @@ export default function TeacherAllocation() {
               <h3 className="text-lg font-medium mb-4">Confirm Auto-Allocation</h3>
               <div className="mb-4">
                 <p className="text-gray-600 mb-2">
-                  You are about to automatically allocate teachers to all exam slots and blocks using AI.
+                  You are about to automatically allocate teachers to all exam slots and blocks.
                 </p>
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <p className="text-sm text-gray-500">

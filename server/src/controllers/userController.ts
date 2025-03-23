@@ -350,3 +350,159 @@ export const updateTeacherPreferences = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Create a new teacher
+export const createTeacher = async (req: Request, res: Response) => {
+  try {
+    const { name, email, password, phone, branch, department, subjects, remuneration } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !branch || !department || !subjects) {
+      return res.status(400).json({
+        message: 'Please provide all required fields: name, email, password, branch, department, and subjects'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User with this email already exists' });
+    }
+
+    // Validate subjects array
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+      return res.status(400).json({ message: 'Please provide at least one subject' });
+    }
+
+    // Create the teacher
+    const teacher = await User.create({
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      password,
+      role: 'teacher',
+      phone: phone?.trim(),
+      branch,
+      department: department.trim(),
+      subjects: subjects.map(subject => subject.trim()),
+      remuneration: remuneration || 0,
+      active: true
+    });
+
+    if (teacher) {
+      res.status(201).json({
+        _id: teacher._id,
+        name: teacher.name,
+        email: teacher.email,
+        role: teacher.role,
+        phone: teacher.phone,
+        branch: teacher.branch,
+        department: teacher.department,
+        subjects: teacher.subjects,
+        remuneration: teacher.remuneration
+      });
+    } else {
+      res.status(400).json({ message: 'Invalid teacher data' });
+    }
+  } catch (error: any) {
+    console.error('Create teacher error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    
+    // Send more specific error messages
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Validation error: ' + error.message });
+    } else if (error.code === 11000) {
+      return res.status(400).json({ message: 'Email already exists' });
+    }
+    
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete a teacher
+export const deleteTeacher = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+    
+    const teacher = await User.findById(teacherId);
+    
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (teacher.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+    
+    // Delete the teacher
+    await User.findByIdAndDelete(teacherId);
+    
+    res.json({ message: 'Teacher deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete teacher error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Update teacher information
+export const updateTeacher = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+    
+    const user = await User.findById(teacherId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+    
+    if (user.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+    
+    // Update basic teacher information
+    if (req.body.name) user.name = req.body.name;
+    if (req.body.email) user.email = req.body.email;
+    if (req.body.phone) user.phone = req.body.phone;
+    if (req.body.branch) user.branch = req.body.branch;
+    if (req.body.department) user.department = req.body.department;
+    if (req.body.subjects) user.subjects = req.body.subjects;
+    if (req.body.remuneration) user.remuneration = req.body.remuneration;
+    
+    const updatedUser = await user.save();
+    
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      branch: updatedUser.branch,
+      department: updatedUser.department,
+      subjects: updatedUser.subjects,
+      remuneration: updatedUser.remuneration
+    });
+  } catch (error: any) {
+    console.error('Update teacher error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
+};
