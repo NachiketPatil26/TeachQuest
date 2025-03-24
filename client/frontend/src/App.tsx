@@ -17,9 +17,12 @@ import TeacherAllocation from './components/allocation/TeacherAllocation';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import TeacherInfoPage from './pages/admin/TeacherInfoPage';
+import AiAssistant from './components/ai/AiAssistant';
 
 function App() {
   return (
+    <>
+    <AiAssistant/>
     
       <Router>
         <Routes>
@@ -50,12 +53,14 @@ function App() {
             <Route path="remuneration" element={<RemunerationPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="support" element={<SupportPage />} />
+        
           </Route>
 
           {/* Fallback Route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      </>
    
   );
 }
