@@ -4,7 +4,6 @@ import TeacherLogin from './components/TeacherLogin';
 import LandingPage from './components/LandingPage';
 import AdminDashboard from './components/dashboard/AdminDashboard';
 import TeacherDashboard from './components/dashboard/TeacherDashboard';
-import DutiesPage from './pages/teacher/DutiesPage';
 import RemunerationPage from './pages/teacher/RemunerationPage';
 import NotificationsPage from './pages/teacher/NotificationsPage';
 import SchedulePage from './pages/teacher/SchedulePage';
@@ -18,6 +17,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import TeacherInfoPage from './pages/admin/TeacherInfoPage';
 import AiAssistant from './components/ai/AiAssistant';
+import DutiesPage from './pages/admin/DutiesPage';
 
 function App() {
   return (
@@ -38,7 +38,7 @@ function App() {
             <Route path="timetable/:branch/:semester" element={<ExamNameSelection />} />
             <Route path="timetable/:branch/:semester/:examName" element={<ExamTimetable />} />
             <Route path="allocation/:branch/:semester/:examName" element={<TeacherAllocation />} />
-            <Route path="duties/:branch" element={<div>Duties Page</div>} />
+            <Route path="duties/:branch" element={<DutiesPage/>} />
             <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
             <Route path="analytics/:branch" element={<AnalyticsPage />} />
             <Route path="teachers/:branch" element={<TeacherInfoPage />} />

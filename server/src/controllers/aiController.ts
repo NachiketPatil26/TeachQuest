@@ -5,6 +5,7 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import Exam from '../models/Exam';
 import User from '../models/User';
+import GroqService from '../services/groqService';
 
 // Define the system prompt template
 const SYSTEM_PROMPT = `
@@ -179,7 +180,7 @@ Always provide a response, even for simple greetings or questions.
 const MODEL_SCRIPT_PATH = path.join(__dirname, '../../scripts/run_deepseek.py');
 
 /**
- * Process a request using the local Deepseek R1 model
+ * Process a request using the Groq API
  */
 export const processAiRequest = async (req: Request, res: Response) => {
   const startTime = Date.now();
@@ -195,19 +196,36 @@ export const processAiRequest = async (req: Request, res: Response) => {
     
     console.log(`Processing AI request [${normalizedInput.substring(0, 30)}...]`);
     
-    // Call the local Deepseek model
-    const result = await callLocalModel(normalizedInput);
+    if (!process.env.GROQ_API_KEY) {
+      throw new Error('Groq API key is not configured');
+    }
+
+    // Use Groq service
+    const groqService = GroqService.getInstance();
+    const result = await groqService.generateResponse(SYSTEM_PROMPT, normalizedInput);
     
-    // Parse the model response
+    // Check if response is JSON (starts with {) or plain text
     let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(result);
-    } catch (error) {
-      console.error('Failed to parse model response as JSON:', error);
-      return res.status(500).json({ 
-        message: 'The AI model returned an invalid response format',
-        rawResponse: result
-      });
+    const trimmedResult = result.trim();
+    
+    if (trimmedResult.startsWith('{')) {
+      // Attempt to parse as JSON for exam-related commands
+      try {
+        parsedResponse = JSON.parse(trimmedResult);
+      } catch (error) {
+        console.error('Failed to parse model response as JSON:', error);
+        return res.status(500).json({ 
+          message: 'The AI model returned an invalid JSON format',
+          rawResponse: result
+        });
+      }
+    } else {
+      // Handle as plain text for chat messages
+      parsedResponse = {
+        intent: 'chat',
+        message: trimmedResult,
+        confidence: 1.0
+      };
     }
     
     // Execute the appropriate action based on the intent
@@ -403,6 +421,44 @@ const createExam = async (entities: any, user: any) => {
   if (!subject || !semester || !branch || !examName || !date || !startTime || !endTime) {
     throw new Error('Missing required fields for creating an exam');
   }
+
+  // Process natural language date input
+  let examDate: Date;
+  try {
+    if (typeof date === 'string') {
+      const lowerDate = date.toLowerCase();
+      if (lowerDate === 'today') {
+        examDate = new Date();
+      } else if (lowerDate === 'tomorrow') {
+        examDate = new Date();
+        examDate.setDate(examDate.getDate() + 1);
+      } else if (lowerDate.includes('next')) {
+        examDate = new Date();
+        if (lowerDate.includes('week')) {
+          examDate.setDate(examDate.getDate() + 7);
+        } else if (lowerDate.includes('month')) {
+          examDate.setMonth(examDate.getMonth() + 1);
+        }
+      } else {
+        examDate = new Date(date);
+      }
+    } else {
+      examDate = new Date(date);
+    }
+
+    if (isNaN(examDate.getTime())) {
+      throw new Error('Invalid date format');
+    }
+
+    // Ensure the date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (examDate < today) {
+      throw new Error('Exam date cannot be in the past');
+    }
+  } catch (error) {
+    throw new Error('Please provide a valid date in YYYY-MM-DD format or use natural language like "today", "tomorrow", "next week"');
+  }
   
   // Create the exam
   const exam = await Exam.create({
@@ -410,7 +466,7 @@ const createExam = async (entities: any, user: any) => {
     semester,
     branch,
     examName,
-    date,
+    date: examDate,
     startTime,
     endTime,
     status: 'scheduled',
