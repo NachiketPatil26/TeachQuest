@@ -9,7 +9,7 @@ import GroqService from '../services/groqService';
 
 // Define the system prompt template
 const SYSTEM_PROMPT = `
-You are an AI assistant for TeachQuest, an exam management system. Your primary task is to help users with exam management tasks and respond to general inquiries.
+You are an AI assistant for TeachQuest your name is NachiGPT, an exam management system. Your primary task is to help users with exam management tasks and respond to general inquiries.
 
 For exam management tasks, you can:
 1. Create a new exam
@@ -47,131 +47,798 @@ For general chat interactions, use this structure:
 }
 
 
-Here is the data of teachers if the user asks - 
+Here is the data of teachers if the user asks for the teachers data then parse this json data into natural language and provide the reponse - 
 const teacherData = [
 
-  {
-    name: 'Mrs. Deepti Jeetu Janjani',
-    email: 'deepti@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['ML', 'AI','AOA'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7892',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  [{
+  "_id": {
+    "$oid": "67ab2b1fea44837d17150305"
   },
-  {
-    name: 'Mrs.Monal Nilesh Malge',
-    email: 'monal@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['DLCOA', 'MP'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7893',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "name": "Test Admin",
+  "email": "admin@gmail.com",
+  "password": "$2a$10$wW96WqDT7Ur4392iaLOkGu0/X7Ipzmz3KXBAvsllEt0DFaOXCohQW",
+  "role": "admin",
+  "phone": "1234567890",
+  "subjects": [],
+  "remuneration": 0,
+  "active": true,
+ 
+  "createdAt": {
+    "$date": "2025-02-11T10:49:03.551Z"
   },
-  {
-    name: 'Mrs. Irin Anna Solomone',
-    email: 'irun@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['DGST', 'CS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7894',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "updatedAt": {
+    "$date": "2025-03-24T15:32:25.372Z"
   },
-  {
-    name: 'Mrs. Amita Priyadarshan Su',
-    email: 'amita@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['AI', 'DBMS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7895',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "__v": 79,
+  "availability": [],
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": []
+},
+{
+  "_id": {
+    "$oid": "67e0628de655fc06159460eb"
   },
-  {
-    name: 'Mrs. Anjali Devi Milind Patil',
-    email: 'anjali@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['SBLC', 'OS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7896',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "name": "Mrs. Deepti Jeetu Janjani",
+  "email": "deepti@gmail.com",
+  "password": "$2a$10$1D3frxaFRyMAHrv3qQ.SX.yohUWCmbqlgnPYTcUhsw9zqCRHlQMsS",
+  "role": "teacher",
+  "phone": "123-456-7892",
+  "department": "Computer Science",
+  "subjects": [
+    "ML",
+    "AI",
+    "AOA"
+  ],
+  "availability": [
+    "Monday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:41.312Z"
   },
-  {
-    name: 'Mrs. Aarti Raman Sonawane',
-    email: 'aarti@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['MP', 'OS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:41.312Z"
   },
-  {
-    name: 'Mrs. Poonam Amit Kamble',
-    email: 'poonam@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['Python', 'DTS'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628de655fc06159460ed"
   },
-  {
-    name: 'Mrs. Shraddha Anant Narhari(Kawji)',
-    email: 'shraddha@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['DGST', 'CG'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "name": "Mrs.Monal Nilesh Malge",
+  "email": "monal@gmail.com",
+  "password": "$2a$10$sZbvM9QXDljp3rJkaxRot.YEUZ3QLOfMQu1QpMG5XvLuxe/O4q77O",
+  "role": "teacher",
+  "phone": "123-456-7893",
+  "department": "Computer Science",
+  "subjects": [
+    "DLCOA",
+    "MP"
+  ],
+  "availability": [
+    "Tuesday",
+    "Thursday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:41.507Z"
   },
-  {
-    name: 'Mrs. Aarpita',
-    email: 'aarpita@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['AOA', 'Maths'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:41.507Z"
   },
-  {
-    name: 'Mr Mazhar Sheikh',
-    email: 'mazhar@gmail.com',
-    password: 'password123',
-    role: 'teacher',
-    subjects: ['Maths'],
-    department: 'Computer Science',
-    active: true,
-    phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
-    remuneration: 1000
-  }
-
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628de655fc06159460ef"
+  },
+  "name": "Mrs. Irin Anna Solomone",
+  "email": "irun@gmail.com",
+  "password": "$2a$10$AbmbZrl5MTNB/p7/BJlxu.3Q/loovEfUcy1i2.MCq6LKllm6T5uEy",
+  "role": "teacher",
+  "phone": "123-456-7894",
+  "department": "Computer Science",
+  "subjects": [
+    "DGST",
+    "CS"
+  ],
+  "availability": [
+    "Tuesday",
+    "Wednesday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:41.683Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:41.683Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628de655fc06159460f1"
+  },
+  "name": "Mrs. Amita Priyadarshan Suke",
+  "email": "amita@gmail.com",
+  "password": "$2a$10$YMZv7evjGfwb9oLiMj8zXuemtIBP/0kzfmr.fwy3zQ2ouZQZbpqUi",
+  "role": "teacher",
+  "phone": "123-456-7895",
+  "department": "Computer Science",
+  "subjects": [
+    "AI",
+    "DBMS"
+  ],
+  "availability": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Friday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:41.869Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:38:18.958Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460f3"
+  },
+  "name": "Mrs. Anjali Devi Milind Patil",
+  "email": "anjali@gmail.com",
+  "password": "$2a$10$s6.ZBdMUHuBBSfwC.u20VuFaFE19o3.WRGuSlsJaaY37B4y12USe.",
+  "role": "teacher",
+  "phone": "123-456-7896",
+  "department": "Computer Science",
+  "subjects": [
+    "SBLC",
+    "OS"
+  ],
+  "availability": [
+    "Monday",
+    "Tuesday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.045Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.045Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460f5"
+  },
+  "name": "Mrs. Aarti Raman Sonawane",
+  "email": "aarti@gmail.com",
+  "password": "$2a$10$ASXeQP48RgQviWEf.UDAje6PNBMNyRI.uz.q7fTTKIOEC4GwnlBqS",
+  "role": "teacher",
+  "phone": "123-456-7897",
+  "department": "Computer Science",
+  "subjects": [
+    "MP",
+    "OS"
+  ],
+  "availability": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.215Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.215Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460f7"
+  },
+  "name": "Mrs. Poonam Amit Kamble",
+  "email": "poonam@gmail.com",
+  "password": "$2a$10$GCqXe8V5/CN0rdw9rsuKLOInNp5Q35hLE1p6HBVrITN1WU5WSe/fu",
+  "role": "teacher",
+  "phone": "123-456-7897",
+  "department": "Computer Science",
+  "subjects": [
+    "Python",
+    "DTS"
+  ],
+  "availability": [
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.382Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.382Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460f9"
+  },
+  "name": "Mrs. Shraddha Anant Narhari(Kawji)",
+  "email": "shraddha@gmail.com",
+  "password": "$2a$10$xLj85oXTQUjtSRBlBwCiJenE7Yh8UM0SiKOvPH7FD2RoqA1Glw4/2",
+  "role": "teacher",
+  "phone": "123-456-7897",
+  "department": "Computer Science",
+  "subjects": [
+    "DGST",
+    "CG"
+  ],
+  "availability": [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.538Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.538Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460fb"
+  },
+  "name": "Mrs. Aarpita",
+  "email": "aarpita@gmail.com",
+  "password": "$2a$10$lb29aHKEkdpW2tVFscdx.OYFSz.h19H.Jsiv13XRT5gpn4wutJWl2",
+  "role": "teacher",
+  "phone": "123-456-7897",
+  "department": "Computer Science",
+  "subjects": [
+    "AOA",
+    "Maths"
+  ],
+  "availability": [
+    "Monday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.701Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.701Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e0628ee655fc06159460fd"
+  },
+  "name": "Mr Mazhar Sheikh",
+  "email": "mazhar@gmail.com",
+  "password": "$2a$10$bcUobcCpRa1cK.m56uDLyu/.YthtHxqAdrVMgSq6ArEeePvLOa1Im",
+  "role": "teacher",
+  "phone": "123-456-7897",
+  "department": "Computer Science",
+  "subjects": [
+    "Maths"
+  ],
+  "availability": [
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Saturday",
+    "Sunday"
+  ],
+  "remuneration": 1000,
+  "active": true,
+  "subjectExpertise": [],
+  "subjectPreferences": [],
+  "timePreferences": [],
+  "tokens": [],
+  "createdAt": {
+    "$date": "2025-03-23T19:35:42.863Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-23T19:35:42.863Z"
+  },
+  "__v": 0
+}
 ];
+
+
+Here is the data of exams if the user asks for the exams data then parse this json data into natural language and provide the reponse -
+Match the id of techers to the exams data below to understand which teacher is allocated to which exam -
+[{
+  "_id": {
+    "$oid": "67e067ac8eec388cf4f93066"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA1",
+  "subject": "Maths",
+  "date": {
+    "$date": "2025-03-25T00:00:00.000Z"
+  },
+  "startTime": "06:27",
+  "endTime": "09:27",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628ee655fc06159460fd"
+    },
+    {
+      "$oid": "67e0628de655fc06159460ed"
+    },
+    {
+      "$oid": "67e0628de655fc06159460ef"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 1104,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068278eec388cf4f9322d"
+      },
+      "invigilator": {
+        "$oid": "67e0628de655fc06159460f1"
+      }
+    },
+    {
+      "number": 909,
+      "capacity": 30,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068388eec388cf4f932c3"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460f5"
+      }
+    },
+    {
+      "number": 809,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068428eec388cf4f9335b"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460f9"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-23T19:57:32.306Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-24T11:31:43.669Z"
+  },
+  "__v": 4
+},
+{
+  "_id": {
+    "$oid": "67e067bb8eec388cf4f93069"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA1",
+  "subject": "AOA",
+  "date": {
+    "$date": "2025-03-27T00:00:00.000Z"
+  },
+  "startTime": "10:27",
+  "endTime": "00:27",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628de655fc06159460eb"
+    },
+    {
+      "$oid": "67e0628ee655fc06159460fb"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 909,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068598eec388cf4f933fa"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460f7"
+      }
+    },
+    {
+      "number": 1102,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068658eec388cf4f93490"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460f9"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-23T19:57:47.168Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-24T11:31:43.817Z"
+  },
+  "__v": 3
+},
+{
+  "_id": {
+    "$oid": "67e067d08eec388cf4f9306c"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA1",
+  "subject": "DBMS",
+  "date": {
+    "$date": "2025-03-28T00:00:00.000Z"
+  },
+  "startTime": "00:28",
+  "endTime": "10:28",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628de655fc06159460f1"
+    },
+    {
+      "$oid": "67e0628ee655fc06159460f7"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 404,
+      "capacity": 30,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e0687b8eec388cf4f93532"
+      },
+      "invigilator": {
+        "$oid": "67e0628de655fc06159460eb"
+      }
+    },
+    {
+      "number": 405,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e0688c8eec388cf4f935c8"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460fb"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-23T19:58:08.120Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-24T11:35:55.809Z"
+  },
+  "__v": 4
+},
+{
+  "_id": {
+    "$oid": "67e067e58eec388cf4f9306f"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA1",
+  "subject": "OS",
+  "date": {
+    "$date": "2025-03-28T00:00:00.000Z"
+  },
+  "startTime": "10:36",
+  "endTime": "10:35",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628ee655fc06159460f3"
+    },
+    {
+      "$oid": "67e0628de655fc06159460eb"
+    },
+    {
+      "$oid": "67e0628ee655fc06159460f7"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 1101,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068a58eec388cf4f9366e"
+      },
+      "invigilator": {
+        "$oid": "67e0628de655fc06159460f1"
+      }
+    },
+    {
+      "number": 809,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068b08eec388cf4f93704"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460fb"
+      }
+    },
+    {
+      "number": 909,
+      "capacity": 30,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068c48eec388cf4f9379c"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460fb"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-23T19:58:29.224Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-24T11:35:55.930Z"
+  },
+  "__v": 5
+},
+{
+  "_id": {
+    "$oid": "67e0680e8eec388cf4f93074"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA1",
+  "subject": "MP",
+  "date": {
+    "$date": "2025-03-31T00:00:00.000Z"
+  },
+  "startTime": "11:29",
+  "endTime": "02:29",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628ee655fc06159460f5"
+    },
+    {
+      "$oid": "67e0628ee655fc06159460f3"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 908,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e068e48eec388cf4f93849"
+      },
+      "invigilator": {
+        "$oid": "67e0628ee655fc06159460f9"
+      }
+    },
+    {
+      "number": 909,
+      "capacity": 20,
+      "location": "Old Building",
+      "_id": {
+        "$oid": "67e069028eec388cf4f93a0c"
+      },
+      "invigilator": {
+        "$oid": "67e0628de655fc06159460f1"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-23T19:59:10.754Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-24T11:31:44.216Z"
+  },
+  "__v": 5
+},
+{
+  "_id": {
+    "$oid": "67e217d520fb9e08a69130ba"
+  },
+  "branch": "Computer Science",
+  "semester": 5,
+  "examName": "IA2",
+  "subject": "Maths",
+  "date": {
+    "$date": "2025-03-25T02:41:25.823Z"
+  },
+  "startTime": "12:00",
+  "endTime": "14:00",
+  "allocatedTeachers": [
+    {
+      "$oid": "67e0628ee655fc06159460fd"
+    }
+  ],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [
+    {
+      "number": 101,
+      "capacity": 2,
+      "location": "123",
+      "_id": {
+        "$oid": "67e22697d6f99fa4e9335123"
+      },
+      "invigilator": {
+        "$oid": "67e0628de655fc06159460ed"
+      }
+    }
+  ],
+  "createdAt": {
+    "$date": "2025-03-25T02:41:25.839Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-25T03:44:39.999Z"
+  },
+  "__v": 3
+},
+{
+  "_id": {
+    "$oid": "67e21892768988a46d8c889c"
+  },
+  "branch": "Computer Science",
+  "semester": 5,
+  "examName": "IA2",
+  "subject": "AOA",
+  "date": {
+    "$date": "2025-03-25T02:44:34.031Z"
+  },
+  "startTime": "14:00",
+  "endTime": "16:00",
+  "allocatedTeachers": [],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [],
+  "createdAt": {
+    "$date": "2025-03-25T02:44:34.044Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-25T02:44:34.044Z"
+  },
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "67e21b03768988a46d8c88bc"
+  },
+  "branch": "Computer Science",
+  "semester": 4,
+  "examName": "IA2",
+  "subject": "OS",
+  "date": {
+    "$date": "2025-03-25T02:54:59.544Z"
+  },
+  "startTime": "14:00",
+  "endTime": "17:00",
+  "allocatedTeachers": [],
+  "createdBy": {
+    "$oid": "000000000000000000000000"
+  },
+  "status": "scheduled",
+  "blocks": [],
+  "createdAt": {
+    "$date": "2025-03-25T02:54:59.549Z"
+  },
+  "updatedAt": {
+    "$date": "2025-03-25T02:54:59.549Z"
+  },
+  "__v": 0
+}]
 
 Always provide a response, even for simple greetings or questions.
 `;
