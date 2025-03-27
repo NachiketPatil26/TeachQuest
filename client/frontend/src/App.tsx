@@ -17,7 +17,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import TeacherInfoPage from './pages/admin/TeacherInfoPage';
 import AiAssistant from './components/ai/AiAssistant';
-import DutiesPage from './pages/admin/DutiesPage';
+
 
 function App() {
   return (
@@ -38,7 +38,6 @@ function App() {
             <Route path="timetable/:branch/:semester" element={<ExamNameSelection />} />
             <Route path="timetable/:branch/:semester/:examName" element={<ExamTimetable />} />
             <Route path="allocation/:branch/:semester/:examName" element={<TeacherAllocation />} />
-            <Route path="duties/:branch" element={<DutiesPage/>} />
             <Route path="remuneration/:branch" element={<div>Remuneration Page</div>} />
             <Route path="analytics/:branch" element={<AnalyticsPage />} />
             <Route path="teachers/:branch" element={<TeacherInfoPage />} />
@@ -47,7 +46,6 @@ function App() {
           {/* Protected Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute role="teacher" />}>
             <Route path="dashboard" element={<TeacherDashboard />} />
-            <Route path="duties" element={<DutiesPage />} />
             <Route path="schedule" element={<SchedulePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="remuneration" element={<RemunerationPage />} />
