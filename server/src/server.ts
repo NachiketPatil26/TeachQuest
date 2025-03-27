@@ -14,6 +14,7 @@ import userRoutes from './routes/userRoutes';
 import teacherRoutes from './routes/teacherRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import User from './models/User';
+import aiRoutes from './routes/aiRoutes';
 
 // Error handling interface
 interface ErrorWithStatus extends Error {
@@ -32,6 +33,7 @@ connectDB();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api/ai', aiRoutes);
 
 // Global error handling middleware
 app.use((err: ErrorWithStatus, req: express.Request, res: express.Response, next: express.NextFunction) => {
