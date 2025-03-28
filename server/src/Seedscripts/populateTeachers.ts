@@ -17,10 +17,10 @@ const subjects = [
 ];
 
 // Sample teacher data
-// Generate random dates for teacher availability
+// Generate all weekdays for teacher availability
 const generateAvailabilityDays = () => {
   const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  return weekdays.filter(() => Math.random() > 0.3); // 70% chance of being available on any day
+  return weekdays; // All teachers available on all days
 };
 
 const teacherData = [
@@ -34,7 +34,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7892',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -46,7 +46,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7893',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -58,7 +58,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7894',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -70,7 +70,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7895',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -82,7 +82,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7896',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -94,7 +94,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -106,7 +106,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -118,7 +118,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -130,7 +130,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   },
   {
@@ -142,7 +142,7 @@ const teacherData = [
     department: 'Computer Science',
     active: true,
     phone: '123-456-7897',
-    availability: generateAvailabilityDays(),
+    availability: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',],
     remuneration: 1000
   }
 
