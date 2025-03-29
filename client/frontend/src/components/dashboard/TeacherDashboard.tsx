@@ -32,6 +32,15 @@ interface UpcomingDuty {
   startTime: string;
   endTime: string;
   status: 'scheduled' | 'in-progress' | 'completed';
+  blocks?: Array<{
+    number: number;
+    capacity: number;
+    location: string;
+    invigilator?: string;
+  }>;
+  examName?: string;
+  branch?: string;
+  semester?: number;
 }
 // CardSkeleton Component
 function CardSkeleton() {
@@ -390,13 +399,14 @@ export default function TeacherDashboard() {
                   <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Date</th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Subject</th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Time</th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Location</th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
                       <div className="flex justify-center items-center space-x-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
                         <span>Loading duties...</span>
@@ -405,71 +415,147 @@ export default function TeacherDashboard() {
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-sm text-red-500">
+                    <td colSpan={5} className="py-4 text-center text-sm text-red-500">
                       {error}
                     </td>
                   </tr>
                 ) : upcomingDuties.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                    <td colSpan={5} className="py-4 text-center text-sm text-gray-500">
                       No upcoming duties found.
                     </td>
                   </tr>
                 ) : (
-                  upcomingDuties.map((duty) => (
-                    <tr key={duty._id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {new Date(duty.date).toLocaleDateString()}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {duty.subject}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {duty.startTime} - {duty.endTime}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
-                          duty.status === 'scheduled' 
-                            ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20' 
-                            : duty.status === 'in-progress' 
-                            ? 'bg-blue-50 text-blue-700 ring-blue-600/20' 
-                            : 'bg-green-50 text-green-700 ring-green-600/20'
-                        }`}>
-                          {duty.status === 'scheduled' 
-                            ? 'Scheduled' 
-                            : duty.status === 'in-progress' 
-                            ? 'In Progress' 
-                            : 'Completed'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  upcomingDuties.map((duty) => {
+                    // Find the room from blocks if available
+                    const room = duty.blocks && duty.blocks.length > 0 
+                      ? duty.blocks.find(block => block.invigilator === user?.id)?.location || 'Not assigned'
+                      : 'Not specified';
+                      
+                    return (
+                      <tr key={duty._id} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {new Date(duty.date).toLocaleDateString()}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {duty.subject}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {duty.startTime} - {duty.endTime}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {room}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
+                            duty.status === 'scheduled' 
+                              ? 'bg-yellow-50 text-yellow-700 ring-yellow-600/20' 
+                              : duty.status === 'in-progress' 
+                              ? 'bg-blue-50 text-blue-700 ring-blue-600/20' 
+                              : 'bg-green-50 text-green-700 ring-green-600/20'
+                          }`}>
+                            {duty.status === 'scheduled' 
+                              ? 'Scheduled' 
+                              : duty.status === 'in-progress' 
+                              ? 'In Progress' 
+                              : 'Completed'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
         </div>
 
+        {/* Teacher Allocation Details */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900">Your Allocation Details</h2>
+              <p className="mt-1 text-sm text-gray-500">Summary of your exam duty allocations</p>
+            </div>
+          </div>
+          
+          {loading ? (
+            <div className="animate-pulse space-y-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-500">{error}</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Total Allocated Duties</h3>
+                <p className="text-2xl font-bold text-[#9FC0AE]">{stats?.totalDuties || 0}</p>
+                <p className="text-sm text-gray-500 mt-1">Across all exam periods</p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Upcoming Duties</h3>
+                <p className="text-2xl font-bold text-[#9FC0AE]">{stats?.upcomingDuties || 0}</p>
+                <p className="text-sm text-gray-500 mt-1">Scheduled in the next 30 days</p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 className="font-medium text-gray-900 mb-2">Completed Duties</h3>
+                <p className="text-2xl font-bold text-[#9FC0AE]">{stats?.completedDuties || 0}</p>
+                <p className="text-sm text-gray-500 mt-1">Successfully completed exams</p>
+              </div>
+            </div>
+          )}
+          
+          {!loading && !error && upcomingDuties.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-medium text-gray-900 mb-3">Next Scheduled Duty</h3>
+              <div className="bg-[#F0F7F4] p-4 rounded-lg border border-[#D4ECDD]">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">{upcomingDuties[0].subject}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {new Date(upcomingDuties[0].date).toLocaleDateString()} • {upcomingDuties[0].startTime} - {upcomingDuties[0].endTime}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {upcomingDuties[0].blocks && upcomingDuties[0].blocks.length > 0 
+                        ? `Room: ${upcomingDuties[0].blocks.find(block => block.invigilator === user?.id)?.location || 'Not assigned yet'}` 
+                        : 'Room: Not assigned yet'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/teacher/duties')}
+                    className="mt-3 md:mt-0 px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] transition-colors"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-  {loading ? (
-    Array(6).fill(null).map((_, index) => (
-      <CardSkeleton key={index} />
-    ))
-  ) : (
-    dashboardCards.map((card, index) => (
-      <DashboardCard
-        key={index}
-        title={card.title}
-        description={card.description}
-        icon={card.icon}
-        onClick={card.onClick}
-        bgColor={card.bgColor}
-        
-      />
-    ))
-  )}
-</div>
+          {loading ? (
+            Array(6).fill(null).map((_, index) => (
+              <CardSkeleton key={index} />
+            ))
+          ) : (
+            dashboardCards.map((card, index) => (
+              <DashboardCard
+                key={index}
+                title={card.title}
+                description={card.description}
+                icon={card.icon}
+                onClick={card.onClick}
+                bgColor={card.bgColor}
+              />
+            ))
+          )}
+        </div>
 
       </main>
     </div>
