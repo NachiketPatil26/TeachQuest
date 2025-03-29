@@ -3,10 +3,9 @@ import { useParams } from 'react-router-dom';
 import { ResponsiveContainer, BarChart, XAxis, YAxis, Tooltip, Legend, CartesianGrid, Bar, PieChart, Pie, Cell } from 'recharts';
 
 import { getExams, getTeachers } from '../../services/api';
+import { getAnalyticsData } from '../../services/api-analytics';
 
-interface AnalyticsProps {
-  branch?: string;
-}
+
 
 interface Teacher {
   _id: string;
@@ -46,8 +45,8 @@ interface WorkloadMetric {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FCCDE5', '#8DD1E1', '#A4DE6C', '#D0ED57'];
 
-export default function DashboardAnalytics({ branch }: AnalyticsProps) {
-  const { semester } = useParams<{ semester: string }>();
+export default function AnalyticsPage() {
+  const { branch, semester } = useParams<{ branch: string; semester?: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
@@ -62,51 +61,52 @@ export default function DashboardAnalytics({ branch }: AnalyticsProps) {
         setLoading(true);
         setError('');
 
-        // Fetch teachers
+        // Fetch teachers for reference
         const teachersData = await getTeachers();
         if (!teachersData || !Array.isArray(teachersData)) {
           throw new Error('Invalid teachers data received');
         }
         setTeachers(teachersData);
 
-        // Fetch exam slots
-        if (branch && semester) {
-          const examsData = await getExams(branch, Number(semester));
-          if (!examsData || !Array.isArray(examsData)) {
-            throw new Error('Invalid exam slots data received');
+        // Fetch analytics data
+        if (branch) {
+          // Get analytics data from the API
+          const analyticsData = await getAnalyticsData(branch, semester ? Number(semester) : undefined);
+          
+          // Set exam slots if needed for other components
+          if (semester) {
+            const examsData = await getExams(branch, Number(semester));
+            if (!examsData || !Array.isArray(examsData)) {
+              throw new Error('Invalid exam slots data received');
+            }
+            setExamSlots(examsData);
           }
-          setExamSlots(examsData);
-
-          // Calculate subject distribution
-          const subjectCounts: Record<string, number> = {};
-          examsData.forEach((exam) => {
-            subjectCounts[exam.subject] = (subjectCounts[exam.subject] || 0) + 1;
-          });
-
-          const subjectData = Object.entries(subjectCounts).map(([subject, count]) => ({
-            subject,
-            count,
-          }));
-          setSubjectDistribution(subjectData);
-
-          // Calculate teacher workload
-          const teacherDutyCounts: Record<string, number> = {};
-          examsData.forEach((exam) => {
-            exam.allocatedTeachers.forEach((teacherId: string) => {
-              teacherDutyCounts[teacherId] = (teacherDutyCounts[teacherId] || 0) + 1;
-            });
-          });
-
-          const workloadData = teachersData
-            .map((teacher) => ({
-              name: teacher.name,
-              duties: teacherDutyCounts[teacher._id] || 0,
-            }))
-            .sort((a, b) => b.duties - a.duties)
-            .slice(0, 10); // Top 10 teachers by workload
-
-          setTeacherWorkload(workloadData);
-
+          
+          // Set subject distribution from analytics data
+          setSubjectDistribution(analyticsData.subjectDistribution || []);
+          
+          // Set teacher workload from analytics data
+          // Map to the format expected by the component
+          console.log('Analytics data received:', analyticsData);
+          console.log('Teacher workload data:', analyticsData.teacherWorkload);
+          
+          // Check if teacherWorkload array exists and has items
+          if (!analyticsData.teacherWorkload || analyticsData.teacherWorkload.length === 0) {
+            console.warn('No teacher workload data available');
+            setTeacherWorkload([]);
+          } else {
+            const workloadData = analyticsData.teacherWorkload
+              .map((item) => ({
+                name: item.teacherName || 'Unknown Teacher',
+                duties: item.totalDuties || 0,
+              }))
+              .sort((a, b) => b.duties - a.duties)
+              .slice(0, 10); // Top 10 teachers by workload
+            
+            console.log('Processed workload data:', workloadData);
+            setTeacherWorkload(workloadData);
+          }
+          
           // Calculate workload distribution metrics
           const workloadRanges = [
             { range: '0 duties', count: 0 },
@@ -115,13 +115,20 @@ export default function DashboardAnalytics({ branch }: AnalyticsProps) {
             { range: '6+ duties', count: 0 },
           ];
 
-          teachersData.forEach((teacher) => {
-            const duties = teacherDutyCounts[teacher._id] || 0;
-            if (duties === 0) workloadRanges[0].count++;
-            else if (duties <= 2) workloadRanges[1].count++;
-            else if (duties <= 5) workloadRanges[2].count++;
-            else workloadRanges[3].count++;
-          });
+          // Use the analytics data to populate workload ranges
+          if (analyticsData.teacherWorkload && analyticsData.teacherWorkload.length > 0) {
+            analyticsData.teacherWorkload.forEach((teacher) => {
+              const duties = teacher.totalDuties || 0;
+              if (duties === 0) workloadRanges[0].count++;
+              else if (duties <= 2) workloadRanges[1].count++;
+              else if (duties <= 5) workloadRanges[2].count++;
+              else workloadRanges[3].count++;
+            });
+          } else {
+            console.warn('No teacher workload data available for metrics calculation');
+          }
+          
+          console.log('Workload metrics:', workloadRanges);
 
           setWorkloadMetrics(workloadRanges);
         }
@@ -229,7 +236,7 @@ export default function DashboardAnalytics({ branch }: AnalyticsProps) {
       </div>
 
       {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="p-6 bg-white rounded-lg shadow-md">
           <h3 className="text-lg font-semibold mb-2">Total Exams</h3>
           <p className="text-3xl font-bold">{examSlots.length}</p>
@@ -244,6 +251,12 @@ export default function DashboardAnalytics({ branch }: AnalyticsProps) {
             {teachers.length > 0
               ? (teacherWorkload.reduce((sum, item) => sum + item.duties, 0) / teachers.length).toFixed(1)
               : '0'}
+          </p>
+        </div>
+        <div className="p-6 bg-white rounded-lg shadow-md">
+          <h3 className="text-lg font-semibold mb-2">Completion Rate</h3>
+          <p className="text-3xl font-bold">
+            {`${((teacherWorkload.filter(item => item.duties > 0).length / Math.max(teachers.length, 1)) * 100).toFixed(1)}%`}
           </p>
         </div>
       </div>

@@ -599,3 +599,75 @@ export const updateTeacher = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Get teacher upcoming duties
+export const getTeacherUpcomingDuties = async (req: Request, res: Response) => {
+  try {
+    const teacherId = req.params.id || req.user?.id;
+    
+    if (!teacherId) {
+      return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    // Verify if the teacher exists
+    const teacher = await User.findById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    if (teacher.role !== 'teacher') {
+      return res.status(400).json({ message: 'User is not a teacher' });
+    }
+
+    // Get limit parameter from query string
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+
+    // Find all exams where this teacher is allocated
+    let query = Exam.find({
+      $or: [
+        { allocatedTeachers: teacherId },
+        { 'blocks.invigilator': teacherId }
+      ],
+      date: { $gte: new Date() } // Only fetch upcoming exams
+    })
+    .populate('blocks.invigilator', 'name email')
+    .sort({ date: 1, startTime: 1 });
+    
+    // Apply limit if provided
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const exams = await query.exec();
+    
+    // Format the response to match the client expectations
+    const duties = exams.map(exam => ({
+      _id: exam._id,
+      subject: exam.subject,
+      date: exam.date,
+      startTime: exam.startTime,
+      endTime: exam.endTime,
+      status: exam.status,
+      examName: exam.examName,
+      branch: exam.branch,
+      semester: exam.semester,
+      blocks: exam.blocks
+    }));
+
+    res.json(duties);
+  } catch (error: any) {
+    console.error('Get teacher upcoming duties error:', {
+      message: error.message,
+      stack: error.stack,
+      teacherId: req.params.id || req.user?.id
+    });
+
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'Invalid teacher ID format' });
+    }
+
+    res.status(500).json({ 
+      message: 'Failed to fetch upcoming duties. Please try again later.'
+    });
+  }
+};

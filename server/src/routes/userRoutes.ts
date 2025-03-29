@@ -10,7 +10,9 @@ import {
   updateTeacherPreferences,
   updateTeacher,
   createTeacher,
-  deleteTeacher
+  deleteTeacher,
+  getTeacherStats,
+  getTeacherUpcomingDuties
 } from '../controllers/userController';
 import { protect, adminOnly, teacherOnly } from '../middleware/auth';
 
@@ -61,5 +63,17 @@ router.route('/expertise')
 // Current teacher's preferences
 router.route('/preferences')
   .put(protect as unknown as express.RequestHandler, teacherOnly as unknown as express.RequestHandler, updateTeacherPreferences as unknown as express.RequestHandler);
+
+// Current teacher's statistics
+router.route('/teachers/me/stats')
+  .get(protect as unknown as express.RequestHandler, teacherOnly as unknown as express.RequestHandler, getTeacherStats as unknown as express.RequestHandler);
+
+// Current teacher's upcoming duties
+router.route('/teachers/me/duties/upcoming')
+  .get(protect as unknown as express.RequestHandler, teacherOnly as unknown as express.RequestHandler, getTeacherUpcomingDuties as unknown as express.RequestHandler);
+
+// Specific teacher's upcoming duties
+router.route('/teachers/:id/duties/upcoming')
+  .get(protect as unknown as express.RequestHandler, getTeacherUpcomingDuties as unknown as express.RequestHandler);
 
 export default router;

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { addBlock, deleteBlock } from '../../services/api';
 
@@ -29,6 +29,11 @@ interface ExamDetailModalProps {
 export default function ExamDetailModal({ exam: initialExam, isOpen, onClose, onUpdate }: ExamDetailModalProps) {
   const [showBlockForm, setShowBlockForm] = useState(false);
   const [exam, setExam] = useState(initialExam);
+
+  // Update exam state when initialExam changes
+  useEffect(() => {
+    setExam(initialExam);
+  }, [initialExam]);
   const [blockData, setBlockData] = useState<Omit<Block, 'invigilator'>>({ 
     number: 1,
     capacity: 0,
@@ -40,7 +45,7 @@ export default function ExamDetailModal({ exam: initialExam, isOpen, onClose, on
       const updatedExam = await addBlock(exam._id, blockData);
       setExam(updatedExam);
       setShowBlockForm(false);
-      setBlockData({ number: 1, capacity: 0, location: '' });
+      setBlockData({ number: 1, capacity: 20, location: 'Old Building' });
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Failed to add block:', error);
@@ -109,6 +114,18 @@ export default function ExamDetailModal({ exam: initialExam, isOpen, onClose, on
                     onChange={(e) => setBlockData({ ...blockData, number: parseInt(e.target.value) })}
                     className="w-full p-2 border rounded-md"
                   />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[1101, 1103, 1109, 809, 909, 908, 307, 305, 303].map((num) => (
+                      <button
+                        key={num}
+                        onClick={() => setBlockData({ ...blockData, number: num })}
+                        className="px-2 py-1 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                        type="button"
+                      >
+                        {num}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>

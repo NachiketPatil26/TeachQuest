@@ -8,6 +8,7 @@ import TeachQuestLogo from '../../assets/TeachQuestLogo.png';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getTeacherAllocations } from '../../services/api';
+import DutyDetailModal from '../../components/teacher/DutyDetailModal';
 
 interface Duty {
   _id: string;
@@ -30,6 +31,8 @@ const DutiesPage = () => {
   const [duties, setDuties] = useState<Duty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDuty, setSelectedDuty] = useState<Duty | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchTeacherDuties = async () => {
@@ -120,6 +123,7 @@ const DutiesPage = () => {
                   <th className="py-3 px-6 font-semibold">Room</th>
                   <th className="py-3 px-6 font-semibold">Date</th>
                   <th className="py-3 px-6 font-semibold">Time</th>
+                  <th className="py-3 px-6 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,6 +160,17 @@ const DutiesPage = () => {
                         <td className="py-4 px-6">{room}</td>
                         <td className="py-4 px-6">{new Date(duty.date).toLocaleDateString()}</td>
                         <td className="py-4 px-6">{`${duty.startTime} - ${duty.endTime}`}</td>
+                        <td className="py-4 px-6 text-right">
+                          <button
+                            onClick={() => {
+                              setSelectedDuty(duty);
+                              setIsModalOpen(true);
+                            }}
+                            className="px-3 py-1 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] transition-colors text-sm"
+                          >
+                            View Details
+                          </button>
+                        </td>
                       </tr>
                     );
                   })
@@ -166,6 +181,15 @@ const DutiesPage = () => {
         </div> {/* End White Section */}
       </div>
 
+      {/* Duty Detail Modal */}
+      {selectedDuty && (
+        <DutyDetailModal
+          duty={selectedDuty}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          userId={user?.id}
+        />
+      )}
     </div>
   );
 };
