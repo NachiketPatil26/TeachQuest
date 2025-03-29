@@ -23,17 +23,30 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
     const exams = await Exam.find({ branch });
 
     // Calculate teacher workload
+    // Calculate teacher workload including both exam duties and block invigilation
     const teacherWorkload = teachers.map(teacher => {
-      // Count how many times this teacher appears in allocatedTeachers across all exams
-      const duties = exams.reduce((count, exam) => {
-        return count + (exam.allocatedTeachers.includes(teacher._id) ? 1 : 0);
-      }, 0);
+      let totalDuties = 0;
+      
+      // Count exam duties (being in allocatedTeachers)
+      exams.forEach(exam => {
+        if (exam.allocatedTeachers.includes(teacher._id)) {
+          totalDuties++;
+        }
+        // Count block invigilation duties
+        if (exam.blocks) {
+          exam.blocks.forEach(block => {
+            if (block.invigilator && block.invigilator.toString() === teacher._id.toString()) {
+              totalDuties++;
+            }
+          });
+        }
+      });
 
       return {
         _id: teacher._id,
         name: teacher.name,
         email: teacher.email,
-        duties
+        duties: totalDuties
       };
     }).sort((a, b) => b.duties - a.duties); // Sort by duties in descending order
 
@@ -169,8 +182,7 @@ export const getExamStatistics = async (req: Request, res: Response) => {
 // Get all analytics in one call
 export const getAllAnalytics = async (req: Request, res: Response) => {
   try {
-    const { branch } = req.params;
-    const { semester } = req.query;
+    const { branch, semester } = req.query;
     
     if (!branch) {
       return res.status(400).json({ message: 'Branch parameter is required' });
@@ -199,17 +211,30 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
     const exams = await Exam.find(query);
 
     // Calculate teacher workload
+    // Calculate teacher workload including both exam duties and block invigilation
     const teacherWorkload = teachers.map(teacher => {
-      // Count how many times this teacher appears in allocatedTeachers across all exams
-      const duties = exams.reduce((count, exam) => {
-        return count + (exam.allocatedTeachers.includes(teacher._id) ? 1 : 0);
-      }, 0);
+      let totalDuties = 0;
+      
+      // Count exam duties (being in allocatedTeachers)
+      exams.forEach(exam => {
+        if (exam.allocatedTeachers.includes(teacher._id)) {
+          totalDuties++;
+        }
+        // Count block invigilation duties
+        if (exam.blocks) {
+          exam.blocks.forEach(block => {
+            if (block.invigilator && block.invigilator.toString() === teacher._id.toString()) {
+              totalDuties++;
+            }
+          });
+        }
+      });
 
       return {
         _id: teacher._id,
         name: teacher.name,
         email: teacher.email,
-        duties
+        duties: totalDuties
       };
     }).sort((a, b) => b.duties - a.duties); // Sort by duties in descending order
 

@@ -9,18 +9,18 @@ import GroqService from '../services/groqService';
 
 // Define the system prompt template
 const SYSTEM_PROMPT = `
-You are NachiGPT, an intelligent AI assistant for TeachQuest, an exam management system. Your primary task is to help users with exam management tasks and respond to general inquiries in a helpful, friendly manner.
+You are an AI assistant for TeachQuest your name is NachiGPT, an exam management system. Your primary task is to help users with exam management tasks and respond to general inquiries.
 
-# CAPABILITIES
-You can assist with the following exam management tasks:
-1. Create a new exam - Requires subject, semester, branch, exam name, date, start time, end time
-2. Get exam information - Can filter by subject, semester, branch, or exam name
-3. Auto-allocate teachers to exams - Requires exam details to match teachers with appropriate exams
-4. Add blocks to exams - Requires block number, capacity, and location
-5. Update exam details - Can modify any exam property with proper identification
+For exam management tasks, you can:
+1. Create a new exam
+2. Get exam information
+3. Auto-allocate teachers to exams
+4. Add blocks to exams
+5. Update exam details
 
-# RESPONSE FORMAT
-For exam-related requests, respond with a JSON object using this structure:
+For general chat interactions, provide helpful and informative responses while maintaining context.
+
+When responding to exam-related requests, format your response as a JSON object with this structure:
 {
   "intent": "createExam|getExams|autoAllocateTeachers|addBlock|updateExam|chat",
   "entities": {
@@ -39,34 +39,16 @@ For exam-related requests, respond with a JSON object using this structure:
   "message": "Human-readable response"
 }
 
-For general chat interactions, use:
+For general chat interactions, use this structure:
 {
   "intent": "chat",
   "message": "Your helpful response here",
   "confidence": 0.95
 }
 
-# HANDLING INCOMPLETE INFORMATION
-If the user provides incomplete information for an exam-related task:
-1. DO NOT throw an error or respond with failure messages
-2. Instead, identify which specific information is missing
-3. Ask for the missing information in a friendly, conversational way
-4. Provide examples of valid inputs when appropriate
-5. Set "intent" to the appropriate action but include a "needsMoreInfo" field set to true
 
-# CONTEXT AWARENESS
-Maintain context from previous messages in the conversation. If a user refers to "the exam" or "that subject," try to understand what they're referring to based on conversation history.
-
-# ERROR PREVENTION
-If you detect potential issues (like invalid dates, time conflicts, etc.):
-1. Proactively suggest corrections
-2. Explain the potential issue clearly
-3. Offer alternative solutions
-
-# CONVERSATION STYLE
-Always maintain a friendly, helpful tone. Use natural language rather than technical jargon when possible. Personalize responses based on the user's query style.
-
-When uncertain about a request, politely ask clarifying questions rather than guessing or returning errors. Always provide a response, even for simple greetings or questions.
+Remember to always respond in a friendly and helpful manner. If you don't understand a request, politely ask for more details or clarify your question.
+Always provide a response, even for simple greetings or questions.
 `;
 
 // Path to the Deepseek R1 model script
@@ -379,34 +361,24 @@ const getExams = async (entities: any) => {
     throw new Error('Branch is required to fetch exams');
   }
   
-  console.log('AI Controller - Fetching exams for branch:', branch);
-  
-  // Build query object - Use case-insensitive regex for branch name to avoid case sensitivity issues
-  const query: any = { branch: new RegExp('^' + branch + '$', 'i') };
+  // Build query object
+  const query: any = { branch };
   
   // Add semester to query if provided
   if (semester) {
-    query.semester = parseInt(semester, 10);
-    console.log('AI Controller - Adding semester filter:', query.semester);
+    query.semester = semester;
   }
   
   // Add examName to query if provided
   if (examName) {
     query.examName = examName;
-    console.log('AI Controller - Adding examName filter:', examName);
   }
   
-  try {
-    const exams = await Exam.find(query)
-      .populate('allocatedTeachers', 'name email')
-      .sort({ date: 1, startTime: 1 });
-    
-    console.log(`AI Controller - Found ${exams.length} exams for branch ${branch}`);
-    return exams;
-  } catch (error) {
-    console.error('AI Controller - Error fetching exams:', error);
-    throw new Error(`Failed to fetch exams: ${error.message}`);
-  }
+  const exams = await Exam.find(query)
+    .populate('allocatedTeachers', 'name email')
+    .sort({ date: 1, startTime: 1 });
+  
+  return exams;
 };
 
 /**
