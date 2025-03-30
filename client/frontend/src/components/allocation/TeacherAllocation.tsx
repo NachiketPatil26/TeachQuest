@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Check, AlertCircle, Calendar, Clock, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { Check, AlertCircle, Calendar, Clock,  AlertTriangle, Sparkles } from 'lucide-react';
 import { getTeachers, getExams, allocateTeachers, assignInvigilator, autoAllocateTeachers } from '../../services/api';
 import api from '../../services/api';
 
@@ -33,6 +33,8 @@ interface ExamSlot {
   allocatedTeachers: string[];
   blockCapacity?: number;
   blocks?: Block[];
+  allocatedTeachersCount: number;
+  hasAllocations: boolean;
 }
 
 // Improved availability check with better date handling
@@ -360,8 +362,6 @@ export default function TeacherAllocation() {
     }
   };
 
-
-
   const handleAllocation = () => {
     console.log('Starting teacher allocation process...');
     
@@ -560,10 +560,11 @@ export default function TeacherAllocation() {
         }
       }
       
-      // Refresh the data to show the updated allocations
+      showNotification('success', 'Auto-allocation completed successfully!');
+      
+      // Fetch updated data after auto-allocation is complete
       await fetchData();
       
-      showNotification('success', 'Auto-allocation completed successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to auto-allocate teachers';
       console.error('Error auto-allocating teachers:', error);
@@ -795,32 +796,44 @@ export default function TeacherAllocation() {
                                       <span className="text-xs text-gray-500">
                                         ({block.capacity} seats, {block.location})
                                       </span>
-                                      {block.invigilator && (
-                                        <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                                          Assigned
-                                        </span>
-                                      )}
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <span>{examSlot.block || 'No block specified'}</span>
+                                <span className="text-gray-500">No blocks defined</span>
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <Users size={16} className="mr-2 text-gray-400" />
-                                <span className="font-medium">{examSlot.allocatedTeachers?.length || 0}</span>
-                                <span className="text-gray-500 ml-1">allocated</span>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {examSlot.blocks?.some(block => block.invigilator) || examSlot.allocatedTeachers?.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {/* Show block invigilators */}
+                                    {examSlot.blocks?.map(block => {
+                                      if (block.invigilator) {
+                                        const teacher = teachers.find(t => t._id === block.invigilator);
+                                        return teacher ? (
+                                          <span key={`block-${block.number}`} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Block {block.number}: {teacher.name}
+                                          </span>
+                                        ) : null;
+                                      }
+                                      return null;
+                                    })}
+                                    
+                                    {/* Show directly allocated teachers */}
+                                    {examSlot.allocatedTeachers?.map(teacherId => {
+                                      const teacher = teachers.find(t => t._id === teacherId);
+                                      return teacher ? (
+                                        <span key={teacherId} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          {teacher.name}
+                                        </span>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                ) : (
+                                  <span className="text-gray-500">No teachers allocated</span>
+                                )}
                               </div>
-                              {examSlot.allocatedTeachers?.length > 0 && (
-                                <div className="mt-1 text-xs text-gray-500">
-                                  {examSlot.allocatedTeachers.map(teacherId => {
-                                    const teacher = teachers.find(t => t._id === teacherId);
-                                    return teacher ? teacher.name : '';
-                                  }).join(', ')}
-                                </div>
-                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button
@@ -828,9 +841,7 @@ export default function TeacherAllocation() {
                                 aria-label={`Allocate teachers to ${examSlot.subject} exam`}
                                 className="text-[#9FC0AE] hover:text-[#8BAF9A] font-medium"
                               >
-                                {selectedSlot === examSlot._id ? 'Cancel Selection' : 
-                                  examSlot.allocatedTeachers && examSlot.allocatedTeachers.length > 0 ? 
-                                  'Edit Allocation' : 'Allocate Teachers'}
+                                Allocate Teachers
                               </button>
                             </td>
                           </tr>

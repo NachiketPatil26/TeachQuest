@@ -1,0 +1,722 @@
+[
+  {
+    "_id": "67e65dc1f445020ab54234db",
+    "branch": "Computer Science",
+    "semester": 4,
+    "examName": "IA2",
+    "subject": "Maths IV",
+    "date": "2025-04-04T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6657e4f97a7e0268681ba"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e66f01d3a81189e03c18dd"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e66f05d3a81189e03c198d"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e66f09d3a81189e03c1a3f"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e66f13d3a81189e03c1af3"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e66f16d3a81189e03c1ba9"
+      }
+    ],
+    "createdAt": "2025-03-28T08:28:49.497Z",
+    "updatedAt": "2025-03-28T09:45:49.210Z",
+    "__v": 12
+  },
+  {
+    "_id": "67e65e6df9dbf25260f56192",
+    "branch": "Computer Science",
+    "semester": 4,
+    "examName": "IA2",
+    "subject": "AOA",
+    "date": "2025-04-07T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67033d3a81189e03c2214"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67035d3a81189e03c22c2"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67038d3a81189e03c2372"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6703bd3a81189e03c2424"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6703dd3a81189e03c24d8"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67047d3a81189e03c258e"
+      }
+    ],
+    "createdAt": "2025-03-28T08:31:41.594Z",
+    "updatedAt": "2025-03-28T09:47:51.970Z",
+    "__v": 10
+  },
+  {
+    "_id": "67e65e8ef9dbf25260f561b0",
+    "branch": "Computer Science",
+    "semester": 4,
+    "examName": "IA2",
+    "subject": "DBMS",
+    "date": "2025-04-08T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67051d3a81189e03c2640"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67054d3a81189e03c26ee"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67057d3a81189e03c279e"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6705ad3a81189e03c2850"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67064d3a81189e03c2904"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67067d3a81189e03c29ba"
+      }
+    ],
+    "createdAt": "2025-03-28T08:32:14.140Z",
+    "updatedAt": "2025-03-28T09:48:23.131Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e65f04f9dbf25260f561ee",
+    "branch": "Computer Science",
+    "semester": 4,
+    "examName": "IA2",
+    "subject": "OS",
+    "date": "2025-04-09T00:00:00.000Z",
+    "startTime": "15:45",
+    "endTime": "16:45",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67086d3a81189e03c2aac"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6708ad3a81189e03c2b5a"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6708dd3a81189e03c2c0a"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67090d3a81189e03c2cbc"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67092d3a81189e03c2d70"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67095d3a81189e03c2e26"
+      }
+    ],
+    "createdAt": "2025-03-28T08:34:12.847Z",
+    "updatedAt": "2025-03-28T09:49:09.825Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e65f28f9dbf25260f5620c",
+    "branch": "Computer Science",
+    "semester": 4,
+    "examName": "IA2",
+    "subject": "MP",
+    "date": "2025-04-11T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670a0d3a81189e03c2ed8"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670a3d3a81189e03c2f86"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670a6d3a81189e03c3036"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670aad3a81189e03c30e8"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670acd3a81189e03c319c"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670afd3a81189e03c3252"
+      }
+    ],
+    "createdAt": "2025-03-28T08:34:48.698Z",
+    "updatedAt": "2025-03-28T09:49:35.957Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e660004f97a7e0268679b0",
+    "branch": "Computer Science",
+    "semester": 6,
+    "examName": "IA2",
+    "subject": "DAV",
+    "date": "2025-04-04T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670cfd3a81189e03c35b6"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670d2d3a81189e03c3664"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670d5d3a81189e03c3714"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670d8d3a81189e03c37c6"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670dbd3a81189e03c387a"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670ddd3a81189e03c3930"
+      }
+    ],
+    "createdAt": "2025-03-28T08:38:24.440Z",
+    "updatedAt": "2025-03-28T09:50:21.693Z",
+    "__v": 8
+  },
+  {
+    "_id": "67e664734f97a7e0268680e7",
+    "branch": "Computer Science",
+    "semester": 6,
+    "examName": "IA2",
+    "subject": "CSS",
+    "date": "2025-04-07T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670e8d3a81189e03c39e2"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670ebd3a81189e03c3a90"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670edd3a81189e03c3b40"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670f0d3a81189e03c3bf2"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670f2d3a81189e03c3ca6"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670f4d3a81189e03c3d5c"
+      }
+    ],
+    "createdAt": "2025-03-28T08:57:23.416Z",
+    "updatedAt": "2025-03-28T09:50:44.735Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e664824f97a7e0268680e9",
+    "branch": "Computer Science",
+    "semester": 6,
+    "examName": "IA2",
+    "subject": "SEPM",
+    "date": "2025-04-08T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670fdd3a81189e03c3e0e"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e670ffd3a81189e03c3ebc"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67101d3a81189e03c3f6c"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67104d3a81189e03c401e"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67107d3a81189e03c40d2"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6710ad3a81189e03c4188"
+      }
+    ],
+    "createdAt": "2025-03-28T08:57:38.586Z",
+    "updatedAt": "2025-03-28T09:51:06.290Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e6648d4f97a7e0268680eb",
+    "branch": "Computer Science",
+    "semester": 6,
+    "examName": "IA2",
+    "subject": "ML",
+    "date": "2025-04-09T00:00:00.000Z",
+    "startTime": "15:45",
+    "endTime": "16:45",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67121d3a81189e03c4260"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67126d3a81189e03c430e"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6712ad3a81189e03c43be"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6712cd3a81189e03c4470"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67131d3a81189e03c4524"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67133d3a81189e03c45da"
+      }
+    ],
+    "createdAt": "2025-03-28T08:57:49.458Z",
+    "updatedAt": "2025-03-28T09:51:47.901Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e664974f97a7e0268680ed",
+    "branch": "Computer Science",
+    "semester": 6,
+    "examName": "IA2",
+    "subject": "IVP",
+    "date": "2025-04-11T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 1101,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6713ed3a81189e03c468c"
+      },
+      {
+        "number": 1103,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67141d3a81189e03c473a"
+      },
+      {
+        "number": 1109,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67144d3a81189e03c47ea"
+      },
+      {
+        "number": 809,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67146d3a81189e03c489c"
+      },
+      {
+        "number": 909,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67148d3a81189e03c4950"
+      },
+      {
+        "number": 908,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6714bd3a81189e03c4a06"
+      }
+    ],
+    "createdAt": "2025-03-28T08:57:59.987Z",
+    "updatedAt": "2025-03-28T09:52:11.664Z",
+    "__v": 6
+  },
+  {
+    "_id": "67e67167d3a81189e03c4bdf",
+    "branch": "Computer Science",
+    "semester": 8,
+    "examName": "IA2",
+    "subject": "AAI",
+    "date": "2025-04-04T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 307,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671d9d3a81189e03c4c98"
+      },
+      {
+        "number": 305,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671dcd3a81189e03c4d46"
+      },
+      {
+        "number": 303,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671ded3a81189e03c4df6"
+      }
+    ],
+    "createdAt": "2025-03-28T09:52:39.945Z",
+    "updatedAt": "2025-03-28T09:54:38.922Z",
+    "__v": 3
+  },
+  {
+    "_id": "67e67174d3a81189e03c4be1",
+    "branch": "Computer Science",
+    "semester": 8,
+    "examName": "IA2",
+    "subject": "AI for finance or RL",
+    "date": "2025-04-07T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 307,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671e7d3a81189e03c4ea5"
+      },
+      {
+        "number": 305,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671e9d3a81189e03c4f53"
+      },
+      {
+        "number": 303,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671ecd3a81189e03c5003"
+      }
+    ],
+    "createdAt": "2025-03-28T09:52:52.032Z",
+    "updatedAt": "2025-03-28T09:54:52.227Z",
+    "__v": 3
+  },
+  {
+    "_id": "67e67187d3a81189e03c4be5",
+    "branch": "Computer Science",
+    "semester": 8,
+    "examName": "IA2",
+    "subject": "Recommendation System or Social Media Analytics",
+    "date": "2025-04-08T00:00:00.000Z",
+    "startTime": "15:30",
+    "endTime": "16:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 307,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671f1d3a81189e03c50b2"
+      },
+      {
+        "number": 305,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671f4d3a81189e03c5160"
+      },
+      {
+        "number": 303,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e671f6d3a81189e03c5210"
+      }
+    ],
+    "createdAt": "2025-03-28T09:53:11.304Z",
+    "updatedAt": "2025-03-28T09:55:02.305Z",
+    "__v": 3
+  },
+  {
+    "_id": "67e67190d3a81189e03c4be7",
+    "branch": "Computer Science",
+    "semester": 8,
+    "examName": "IA2",
+    "subject": "Environmental Management",
+    "date": "2025-04-09T00:00:00.000Z",
+    "startTime": "15:45",
+    "endTime": "16:45",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 307,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6720bd3a81189e03c54cc"
+      },
+      {
+        "number": 305,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e6720fd3a81189e03c557a"
+      },
+      {
+        "number": 303,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67213d3a81189e03c562a"
+      }
+    ],
+    "createdAt": "2025-03-28T09:53:20.191Z",
+    "updatedAt": "2025-03-28T09:55:31.829Z",
+    "__v": 3
+  },
+  {
+    "_id": "67e671b9d3a81189e03c4beb",
+    "branch": "Computer Science",
+    "semester": 8,
+    "examName": "IA2",
+    "subject": "Project Management",
+    "date": "2025-04-09T00:00:00.000Z",
+    "startTime": "11:30",
+    "endTime": "12:30",
+    "allocatedTeachers": [],
+    "createdBy": "000000000000000000000000",
+    "status": "scheduled",
+    "blocks": [
+      {
+        "number": 307,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67200d3a81189e03c52bf"
+      },
+      {
+        "number": 305,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67203d3a81189e03c536d"
+      },
+      {
+        "number": 303,
+        "capacity": 20,
+        "location": "Old Building",
+        "_id": "67e67205d3a81189e03c541d"
+      }
+    ],
+    "createdAt": "2025-03-28T09:54:01.438Z",
+    "updatedAt": "2025-03-28T09:55:17.563Z",
+    "__v": 3
+  }
+]

@@ -5,7 +5,7 @@ import { AxiosError } from 'axios';
 export interface AnalyticsData {
   teacherWorkload: TeacherWorkloadData[];
   subjectDistribution: SubjectDistributionData[];
-  examStatusDistribution: StatusDistributionData[];
+  statusDistribution: StatusDistributionData[];
   summaryStats: SummaryStats;
 }
 

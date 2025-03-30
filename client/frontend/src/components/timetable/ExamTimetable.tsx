@@ -44,6 +44,8 @@ export default function ExamTimetable(): React.ReactElement {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState({ start: '', end: '' });
+  const [dateError, setDateError] = useState<string>('');
+  const [timeError, setTimeError] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,10 +119,78 @@ export default function ExamTimetable(): React.ReactElement {
     );
   };
 
+  // Helper function to check if a date is in the past
+  const isDateInPast = (date: string): boolean => {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return selectedDate < today;
+  };
+
+  // Helper function to check if a time is in the past for today
+  const isTimeInPast = (date: string, time: string): boolean => {
+    const today = new Date();
+    const selectedDateTime = new Date(`${date}T${time}`);
+    return selectedDateTime < today;
+  };
+
+  // Helper function to validate time range
+  const isValidTimeRange = (start: string, end: string): boolean => {
+    return start < end;
+  };
+
+  // Handle date selection with validation
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setSelectedDate(newDate);
+    
+    if (isDateInPast(newDate)) {
+      setDateError('Cannot select a date in the past');
+    } else {
+      setDateError('');
+    }
+  };
+
+  // Handle time selection with validation
+  const handleTimeChange = (type: 'start' | 'end', e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    const newTimeState = { ...selectedTime, [type]: newTime };
+    setSelectedTime(newTimeState);
+
+    if (selectedDate) {
+      if (isTimeInPast(selectedDate, newTime)) {
+        setTimeError('Cannot select a time in the past');
+      } else if (!isValidTimeRange(newTimeState.start, newTimeState.end)) {
+        setTimeError('End time must be after start time');
+      } else {
+        setTimeError('');
+      }
+    }
+  };
+
   const handleAddExamSlot = async () => {
     if (selectedDate && selectedSubject && selectedTime.start && selectedTime.end && examName) {
       try {
         setError('');
+        setDateError('');
+        setTimeError('');
+
+        // Validate date and time before proceeding
+        if (isDateInPast(selectedDate)) {
+          setDateError('Cannot select a date in the past');
+          return;
+        }
+
+        if (isTimeInPast(selectedDate, selectedTime.start) || isTimeInPast(selectedDate, selectedTime.end)) {
+          setTimeError('Cannot select a time in the past');
+          return;
+        }
+
+        if (!isValidTimeRange(selectedTime.start, selectedTime.end)) {
+          setTimeError('End time must be after start time');
+          return;
+        }
+
         const subjectName = subjects.find(s => s.id === selectedSubject)?.name;
         if (!subjectName) {
           setError('Invalid subject selected');
@@ -157,6 +227,8 @@ export default function ExamTimetable(): React.ReactElement {
         setSelectedDate('');
         setSelectedSubject('');
         setSelectedTime({ start: '', end: '' });
+        setDateError('');
+        setTimeError('');
       } catch (err) {
         const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to add exam slot';
         setError(errorMessage);
@@ -351,9 +423,15 @@ export default function ExamTimetable(): React.ReactElement {
               <input
                 type="date"
                 value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+                onChange={handleDateChange}
+                min={new Date().toISOString().split('T')[0]}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE] ${
+                  dateError ? 'border-red-500' : ''
+                }`}
               />
+              {dateError && (
+                <p className="mt-1 text-sm text-red-500">{dateError}</p>
+              )}
             </div>
 
             <div>
@@ -377,8 +455,10 @@ export default function ExamTimetable(): React.ReactElement {
               <input
                 type="time"
                 value={selectedTime.start}
-                onChange={(e) => setSelectedTime({ ...selectedTime, start: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+                onChange={(e) => handleTimeChange('start', e)}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE] ${
+                  timeError ? 'border-red-500' : ''
+                }`}
               />
             </div>
 
@@ -387,16 +467,21 @@ export default function ExamTimetable(): React.ReactElement {
               <input
                 type="time"
                 value={selectedTime.end}
-                onChange={(e) => setSelectedTime({ ...selectedTime, end: e.target.value })}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE]"
+                onChange={(e) => handleTimeChange('end', e)}
+                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#9FC0AE] focus:ring-[#9FC0AE] ${
+                  timeError ? 'border-red-500' : ''
+                }`}
               />
+              {timeError && (
+                <p className="mt-1 text-sm text-red-500">{timeError}</p>
+              )}
             </div>
           </div>
 
           <div className="mt-4">
             <button
               onClick={handleAddExamSlot}
-              disabled={!selectedSubject || !selectedDate || !selectedTime.start || !selectedTime.end}
+              disabled={!selectedSubject || !selectedDate || !selectedTime.start || !selectedTime.end || !!dateError || !!timeError}
               className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#9FC0AE] hover:bg-[#8BAF9A] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="-ml-1 mr-2 h-5 w-5" />
@@ -459,7 +544,12 @@ export default function ExamTimetable(): React.ReactElement {
                             </button>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {slot.allocatedTeachers?.length || 0} allocated
+                          {(() => {
+                            const directAllocations = slot.allocatedTeachers?.length || 0;
+                            const blockInvigilators = slot.blocks?.filter(block => block.invigilator).length || 0;
+                            const totalAllocated = directAllocations + blockInvigilators;
+                            return totalAllocated > 0 ? `${totalAllocated} allocated` : 'No teachers allocated';
+                          })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex space-x-4">

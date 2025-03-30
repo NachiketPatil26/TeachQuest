@@ -1,31 +1,23 @@
-import * as express from 'express';
-import {
-  getUserNotifications,
-  getUnreadCount,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
-  createNotification
-} from '../controllers/notificationController';
-import { protect } from '../middleware/auth';
+import express from 'express';
+import { protect } from '../middleware/authMiddleware';
+// import {
+//   getTeacherNotifications,
+//   markNotificationAsRead,
+//   markAllNotificationsAsRead
+// } from '../controllers/notificationController';
 
 const router = express.Router();
 
-router.route('/user/:userId')
-  .get(protect as unknown as express.RequestHandler, getUserNotifications as express.RequestHandler);
+// // All routes are protected and require authentication
+// router.use(protect);
 
-router.route('/user/:userId/unread')
-  .get(protect as  unknown as express.RequestHandler, getUnreadCount as express.RequestHandler);
+// // Get notifications for the logged-in teacher
+// router.get('/', getTeacherNotifications);
 
-router.route('/:id/user/:userId')
-  .put(protect as unknown as express.RequestHandler, markAsRead as express.RequestHandler)
-  .delete(protect as unknown as express.RequestHandler, deleteNotification as express.RequestHandler);
+// // Mark a specific notification as read
+// router.patch('/:notificationId/read', markNotificationAsRead);
 
-router.route('/user/:userId/mark-all-read')
-  .put(protect as unknown as express.RequestHandler, markAllAsRead as express.RequestHandler);
-
-// Route for creating a new notification
-router.route('/')
-  .post(protect as unknown as express.RequestHandler, createNotification as unknown as express.RequestHandler);
+// // Mark all notifications as read
+// router.patch('/mark-all-read', markAllNotificationsAsRead);
 
 export default router;

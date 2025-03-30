@@ -1,53 +1,47 @@
 import mongoose from 'mongoose';
 
 export interface INotification extends mongoose.Document {
-  user: mongoose.Types.ObjectId;
+  teacherId: mongoose.Types.ObjectId;
+  examId: mongoose.Types.ObjectId;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: 'exam_allocation' | 'exam_update' | 'exam_cancellation';
   read: boolean;
-  relatedTo?: {
-    model: string;
-    id: mongoose.Types.ObjectId;
-  };
+  createdAt: Date;
 }
 
 const notificationSchema = new mongoose.Schema<INotification>(
   {
-    user: {
+    teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: true
+    },
+    examId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Exam',
+      required: true
     },
     title: {
       type: String,
-      required: true,
+      required: true
     },
     message: {
       type: String,
-      required: true,
+      required: true
     },
     type: {
       type: String,
-      enum: ['info', 'warning', 'error', 'success'],
-      default: 'info',
+      enum: ['exam_allocation', 'exam_update', 'exam_cancellation'],
+      required: true
     },
     read: {
       type: Boolean,
-      default: false,
-    },
-    relatedTo: {
-      model: {
-        type: String,
-        enum: ['Exam', 'Branch'],
-      },
-      id: {
-        type: mongoose.Schema.Types.ObjectId,
-      },
-    },
+      default: false
+    }
   },
   {
-    timestamps: true,
+    timestamps: true
   }
 );
 
