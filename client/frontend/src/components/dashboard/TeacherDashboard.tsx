@@ -161,18 +161,36 @@ export default function TeacherDashboard() {
         subject: duty.subject,
         date: duty.date,
         blocks: duty.blocks,
-        assignedBlock: duty.blocks?.find((b: { invigilator: string }) => b.invigilator === user?.id)
+        assignedBlock: duty.blocks?.find((b: Block) => b.invigilator._id === user?.id)
       })));
       
-      setUpcomingDuties(sortedDuties.map(duty => ({
-        _id: duty._id,
-        subject: duty.subject,
-        date: duty.date,
-        startTime: duty.startTime,
-        endTime: duty.endTime,
-        status: duty.status || 'scheduled',
-        blocks: duty.blocks || []
-      })));
+      // Map and validate the duties data
+      const validatedDuties = sortedDuties.map(duty => {
+        // Ensure blocks is an array and has the correct structure
+        const blocks = Array.isArray(duty.blocks) ? duty.blocks.map((block: Block) => ({
+          number: block.number,
+          capacity: block.capacity,
+          location: block.location,
+          _id: block._id,
+          invigilator: {
+            _id: block.invigilator._id,
+            name: block.invigilator.name,
+            email: block.invigilator.email
+          }
+        })) : [];
+
+        return {
+          _id: duty._id,
+          subject: duty.subject,
+          date: duty.date,
+          startTime: duty.startTime,
+          endTime: duty.endTime,
+          status: duty.status || 'scheduled',
+          blocks
+        };
+      });
+
+      setUpcomingDuties(validatedDuties);
     } catch (err) {
       console.error('Error fetching teacher data:', err);
       setError(err instanceof Error ? err.message : 'Failed to load teacher data. Please try again later.');
@@ -480,8 +498,8 @@ export default function TeacherDashboard() {
                   </tr>
                 ) : (
                   upcomingDuties.map((duty) => {
-                    // Find the room and block number from blocks if available
-                    const block = duty.blocks?.find(block => (block as Block).invigilator._id === user?.id);
+                    // Find the block assigned to the current teacher
+                    const block = duty.blocks?.find((b: Block) => b.invigilator._id === user?.id);
                     const room = block?.location || 'Not assigned';
                     const blockNumber = block?.number || 'N/A';
                       
@@ -574,7 +592,7 @@ export default function TeacherDashboard() {
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       {(() => {
-                        const block = upcomingDuties[0].blocks?.find(b => (b as Block).invigilator._id === user?.id);
+                        const block = upcomingDuties[0].blocks?.find((b: Block) => b.invigilator._id === user?.id);
                         return block 
                           ? `Block ${block.number} - Room: ${block.location}`
                           : 'Not assigned';
@@ -582,7 +600,7 @@ export default function TeacherDashboard() {
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate('/teacher/duties')}
+                    onClick={() => navigate(`/teacher/duties/${upcomingDuties[0]._id}`)}
                     className="mt-3 md:mt-0 px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] transition-colors"
                   >
                     View Details

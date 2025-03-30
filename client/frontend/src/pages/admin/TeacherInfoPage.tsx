@@ -11,18 +11,26 @@ interface Teacher {
   department: string;
   subjects: string[];
   availability?: string[];
+  password: string;
+  branch: string;
 }
 
 interface TeacherAllocation {
   _id: string;
-  examId: string;
   examName: string;
   subject: string;
   date: string;
   startTime: string;
   endTime: string;
-  blockNumber?: number;
-  blockLocation?: string;
+  blocks: Array<{
+    number: number;
+    location: string;
+    invigilator: {
+      _id: string;
+      name: string;
+      email: string;
+    };
+  }>;
 }
 
 interface TeacherWithAllocations extends Teacher {
@@ -51,6 +59,7 @@ export default function TeacherInfoPage() {
   const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [currentAllocations, setCurrentAllocations] = useState<TeacherAllocation[]>([]);
   const [currentTeacherName, setCurrentTeacherName] = useState('');
+  const [currentTeacherId, setCurrentTeacherId] = useState<string>('');
 
   useEffect(() => {
     fetchTeachers();
@@ -118,6 +127,8 @@ export default function TeacherInfoPage() {
       phone: '',
       department: branch || '',
       subjects: [],
+      password: '',
+      branch: branch || '',
     });
     setModalMode('create');
     setShowModal(true);
@@ -162,6 +173,8 @@ export default function TeacherInfoPage() {
           phone: formData.phone || '',
           department: formData.department || '',
           subjects: formData.subjects || [],
+          password: formData.password || '',
+          branch: formData.department || '',
         };
         
         const createdTeacher = await createTeacher(newTeacherData);
@@ -320,6 +333,7 @@ export default function TeacherInfoPage() {
                           onClick={() => {
                             setCurrentAllocations(teacher.allocations);
                             setCurrentTeacherName(teacher.name);
+                            setCurrentTeacherId(teacher._id);
                             setShowAllocationModal(true);
                           }}
                           className="ml-2 text-[#9FC0AE] hover:text-[#8BAF9A] text-xs"
@@ -401,6 +415,7 @@ export default function TeacherInfoPage() {
                 phone: formData.get('phone') as string,
                 department: formData.get('department') as string,
                 subjects: (formData.get('subjects') as string).split(',').map(s => s.trim()).filter(Boolean),
+                password: formData.get('password') as string,
               });
             }}>
               <div className="p-6 space-y-4">
@@ -410,7 +425,7 @@ export default function TeacherInfoPage() {
                     type="text"
                     id="name"
                     name="name"
-                    defaultValue={currentTeacher.name}
+                    defaultValue={currentTeacher?.name || ''}
                     required
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
                   />
@@ -421,18 +436,30 @@ export default function TeacherInfoPage() {
                     type="email"
                     id="email"
                     name="email"
-                    defaultValue={currentTeacher.email}
+                    defaultValue={currentTeacher?.email || ''}
                     required
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
                   />
                 </div>
+                {modalMode === 'create' && (
+                  <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                    <input
+                      type="password"
+                      id="password"
+                      name="password"
+                      required
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
+                    />
+                  </div>
+                )}
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone (Optional)</label>
                   <input
                     type="tel"
                     id="phone"
                     name="phone"
-                    defaultValue={currentTeacher.phone}
+                    defaultValue={currentTeacher?.phone || ''}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
                   />
                 </div>
@@ -442,7 +469,7 @@ export default function TeacherInfoPage() {
                     type="text"
                     id="department"
                     name="department"
-                    defaultValue={currentTeacher.department}
+                    defaultValue={currentTeacher?.department || branch || ''}
                     required
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
                   />
@@ -453,7 +480,8 @@ export default function TeacherInfoPage() {
                     type="text"
                     id="subjects"
                     name="subjects"
-                    defaultValue={currentTeacher.subjects?.join(', ')}
+                    defaultValue={currentTeacher?.subjects?.join(', ') || ''}
+                    required
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#9FC0AE] focus:border-[#9FC0AE]"
                   />
                 </div>
@@ -534,8 +562,28 @@ export default function TeacherInfoPage() {
                               {allocation.startTime} - {allocation.endTime}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {allocation.blockNumber ? `Block ${allocation.blockNumber}` : 'N/A'}
-                              {allocation.blockLocation && ` (${allocation.blockLocation})`}
+                              {(() => {
+                                const assignedBlock = allocation.blocks?.find(block => 
+                                  block.invigilator?._id === currentTeacherId
+                                );
+                                return assignedBlock ? (
+                                  <span className="bg-[#F0F7F4] px-2 py-1 rounded-md text-sm font-medium text-[#2C3E50] border border-[#D4ECDD]">
+                                    Block {assignedBlock.number}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-500">Not assigned</span>
+                                );
+                              })()}
+                              {(() => {
+                                const assignedBlock = allocation.blocks?.find(block => 
+                                  block.invigilator?._id === currentTeacherId
+                                );
+                                return assignedBlock?.location && (
+                                  <span className="ml-2 text-gray-600">
+                                    ({assignedBlock.location})
+                                  </span>
+                                );
+                              })()}
                             </td>
                           </tr>
                         );

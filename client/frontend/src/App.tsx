@@ -17,6 +17,8 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import TeacherInfoPage from './pages/admin/TeacherInfoPage';
 import AiAssistant from './components/ai/AiAssistant';
+import TeacherDuties from './components/teacher/TeacherDuties';
+import TeacherDutyDetails from './components/teacher/TeacherDutyDetails';
 
 
 function App() {
@@ -46,6 +48,8 @@ function App() {
           {/* Protected Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute role="teacher" />}>
             <Route path="dashboard" element={<TeacherDashboard />} />
+            <Route path="duties" element={<TeacherDuties />} />
+            <Route path="duties/:id" element={<TeacherDutyDetails />} />
             <Route path="schedule" element={<SchedulePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="remuneration" element={<RemunerationPage />} />
