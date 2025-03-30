@@ -25,6 +25,20 @@ interface TeacherStats {
   totalDuties: number;
 }
 
+interface Invigilator {
+  _id: string;
+  name: string;
+  email: string;
+}
+
+interface Block {
+  number: number;
+  capacity: number;
+  location: string;
+  _id: string;
+  invigilator: Invigilator;
+}
+
 interface UpcomingDuty {
   _id: string;
   subject: string;
@@ -32,16 +46,12 @@ interface UpcomingDuty {
   startTime: string;
   endTime: string;
   status: 'scheduled' | 'in-progress' | 'completed';
-  blocks?: Array<{
-    number: number;
-    capacity: number;
-    location: string;
-    invigilator?: string;
-  }>;
+  blocks?: Block[];
   examName?: string;
   branch?: string;
   semester?: number;
 }
+
 // CardSkeleton Component
 function CardSkeleton() {
   return (
@@ -112,45 +122,86 @@ export default function TeacherDashboard() {
   const [upcomingDuties, setUpcomingDuties] = useState<UpcomingDuty[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchTeacherData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Fetch teacher stats
-        const teacherStats = await getTeacherStats();
-        if (!teacherStats) {
-          throw new Error('No stats data received');
+  const fetchTeacherData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch teacher stats
+      const teacherStats = await getTeacherStats();
+      if (!teacherStats) {
+        throw new Error('No stats data received');
+      }
+      setStats({
+        upcomingDuties: teacherStats.upcomingDuties || 0,
+        completedDuties: teacherStats.completedDuties || 0,
+        pendingReports: teacherStats.pendingReports || 0,
+        totalDuties: teacherStats.totalDuties || 0
+      });
+      
+      // Fetch upcoming duties (limit to 5 for dashboard)
+      const duties = await getTeacherUpcomingDuties(undefined, 5);
+      if (!duties || !Array.isArray(duties)) {
+        throw new Error('Invalid duties data received');
+      }
+      
+      // Sort duties by date and time
+      const sortedDuties = duties.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA.getTime() - dateB.getTime();
         }
-        setStats({
-          upcomingDuties: teacherStats.upcomingDuties || 0,
-          completedDuties: teacherStats.completedDuties || 0,
-          pendingReports: teacherStats.pendingReports || 0,
-          totalDuties: teacherStats.totalDuties || 0
-        });
-        
-        // Fetch upcoming duties (limit to 5 for dashboard)
-        const duties = await getTeacherUpcomingDuties(undefined, 5);
-        if (!duties || !Array.isArray(duties)) {
-          throw new Error('Invalid duties data received');
-        }
-        setUpcomingDuties(duties.map(duty => ({
+        return a.startTime.localeCompare(b.startTime);
+      });
+      
+      // Add debugging logs
+      console.log('Teacher ID:', user?.id);
+      console.log('Sorted Duties:', sortedDuties.map(duty => ({
+        subject: duty.subject,
+        date: duty.date,
+        blocks: duty.blocks,
+        assignedBlock: duty.blocks?.find((b: Block) => b.invigilator._id === user?.id)
+      })));
+      
+      // Map and validate the duties data
+      const validatedDuties = sortedDuties.map(duty => {
+        // Ensure blocks is an array and has the correct structure
+        const blocks = Array.isArray(duty.blocks) ? duty.blocks.map((block: Block) => ({
+          number: block.number,
+          capacity: block.capacity,
+          location: block.location,
+          _id: block._id,
+          invigilator: {
+            _id: block.invigilator._id,
+            name: block.invigilator.name,
+            email: block.invigilator.email
+          }
+        })) : [];
+
+        return {
           _id: duty._id,
           subject: duty.subject,
           date: duty.date,
           startTime: duty.startTime,
           endTime: duty.endTime,
-          status: duty.status || 'scheduled'
-        })));
-      } catch (err) {
-        console.error('Error fetching teacher data:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load teacher data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+          status: duty.status || 'scheduled',
+          blocks
+        };
+      });
 
+      setUpcomingDuties(validatedDuties);
+    } catch (err) {
+      console.error('Error fetching teacher data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load teacher data. Please try again later.');
+      setStats(null);
+      setUpcomingDuties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (user?.id) {
       fetchTeacherData();
     } else {
@@ -311,6 +362,26 @@ export default function TeacherDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+        {error && (
+          <div className="mb-8 bg-red-50 border-l-4 border-red-400 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-red-700">{error}</p>
+                <button
+                  onClick={fetchTeacherData}
+                  className="mt-2 text-sm font-medium text-red-800 hover:text-red-900"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Welcome Section */}
         <div className="mb-8">
   <div className="mb-8 flex items-center">
@@ -427,10 +498,10 @@ export default function TeacherDashboard() {
                   </tr>
                 ) : (
                   upcomingDuties.map((duty) => {
-                    // Find the room from blocks if available
-                    const room = duty.blocks && duty.blocks.length > 0 
-                      ? duty.blocks.find(block => block.invigilator === user?.id)?.location || 'Not assigned'
-                      : 'Not specified';
+                    // Find the block assigned to the current teacher
+                    const block = duty.blocks?.find((b: Block) => b.invigilator._id === user?.id);
+                    const room = block?.location || 'Not assigned';
+                    const blockNumber = block?.number || 'N/A';
                       
                     return (
                       <tr key={duty._id} className="hover:bg-gray-50">
@@ -444,7 +515,7 @@ export default function TeacherDashboard() {
                           {duty.startTime} - {duty.endTime}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {room}
+                          {block ? `Block ${blockNumber} - ${room}` : 'Not assigned'}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${
@@ -520,13 +591,16 @@ export default function TeacherDashboard() {
                       {new Date(upcomingDuties[0].date).toLocaleDateString()} • {upcomingDuties[0].startTime} - {upcomingDuties[0].endTime}
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
-                      {upcomingDuties[0].blocks && upcomingDuties[0].blocks.length > 0 
-                        ? `Room: ${upcomingDuties[0].blocks.find(block => block.invigilator === user?.id)?.location || 'Not assigned yet'}` 
-                        : 'Room: Not assigned yet'}
+                      {(() => {
+                        const block = upcomingDuties[0].blocks?.find((b: Block) => b.invigilator._id === user?.id);
+                        return block 
+                          ? `Block ${block.number} - Room: ${block.location}`
+                          : 'Not assigned';
+                      })()}
                     </p>
                   </div>
                   <button
-                    onClick={() => navigate('/teacher/duties')}
+                    onClick={() => navigate(`/teacher/duties/${upcomingDuties[0]._id}`)}
                     className="mt-3 md:mt-0 px-4 py-2 bg-[#9FC0AE] text-white rounded-md hover:bg-[#8BAF9A] transition-colors"
                   >
                     View Details

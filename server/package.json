@@ -9,6 +9,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@types/nodemailer": "^6.4.17",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -17,6 +18,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.13.0",
     "mongoose": "^7.5.0",
+    "nodemailer": "^6.10.0",
     "socket.io": "^4.7.2",
     "validator": "^13.11.0"
   },
