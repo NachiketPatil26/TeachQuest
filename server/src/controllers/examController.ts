@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Exam from '../models/Exam';
+import Notification from '../models/Notification';
+import User from '../models/User';
+import { sendExamAllocationEmail } from '../services/emailService';
 
 interface ExamRequest extends Request {
   user?: {
@@ -319,9 +322,57 @@ export const allocateTeachers = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
+    // Get previous allocations to determine which teachers are newly allocated
+    const previousTeachers = exam.allocatedTeachers.map(teacher => teacher._id.toString());
+    const newTeachers = teacherIds.filter(id => !previousTeachers.includes(id));
+
     // Update allocated teachers
     exam.allocatedTeachers = teacherIds;
     const updatedExam = await exam.save();
+
+    // Create notifications and send emails for newly allocated teachers
+    for (const teacherId of newTeachers) {
+      const teacher = await User.findById(teacherId);
+      if (!teacher) continue;
+
+      // Find the block assigned to this teacher
+      const assignedBlock = exam.blocks.find(block => 
+        block.invigilator?.toString() === teacherId
+      );
+
+      // Create a detailed notification message
+      const notificationMessage = `
+        You have been allocated to invigilate the following exam:
+        Subject: ${exam.subject}
+        Date: ${new Date(exam.date).toLocaleDateString()}
+        Time: ${exam.startTime} - ${exam.endTime}
+        Block: ${assignedBlock?.number || 'TBD'}
+        Location: ${assignedBlock?.location || 'TBD'}
+        Capacity: ${assignedBlock?.capacity || 'TBD'} students
+      `.trim();
+
+      // Create notification
+      const notification = await Notification.create({
+        teacherId: teacher._id,
+        examId: exam._id,
+        title: 'New Exam Invigilation Assignment',
+        message: notificationMessage,
+        type: 'exam_allocation'
+      });
+
+      // Send email notification
+      try {
+        await sendExamAllocationEmail(
+          teacher.email,
+          teacher.name,
+          exam,
+          assignedBlock?.number
+        );
+      } catch (emailError) {
+        console.error(`Failed to send email to ${teacher.email}:`, emailError);
+        // Continue with other notifications even if email fails
+      }
+    }
 
     // Return exam with populated teacher details and exam details
     const populatedExam = await Exam.findById(updatedExam._id)

@@ -5,7 +5,7 @@ import * as dotenv from 'dotenv';
 import { connectDB } from './config/db';
 import { protect, adminOnly, teacherOnly } from './middleware/auth';
 import * as userController from './controllers/userController';
-import * as notificationController from './controllers/notificationController';
+// import * as notificationController from './controllers/notificationController';
 import * as branchController from './controllers/branchController';
 import * as examController from './controllers/examController';
 import examRoutes from './routes/examRoutes';
@@ -134,9 +134,6 @@ app.delete('/api/branches/:id/teachers', protect as unknown as express.RequestHa
 
 // Teacher Routes
 app.use('/api/teacher', protect as unknown as express.RequestHandler, teacherOnly as express.RequestHandler);
-app.get('/api/notifications', protect as unknown as express.RequestHandler, (notificationController.getUserNotifications as unknown as express.RequestHandler));
-app.put('/api/notifications/:id/read', protect as unknown as express.RequestHandler, (notificationController.markAsRead as unknown as express.RequestHandler));
-app.post('/api/notifications', protect as unknown as express.RequestHandler, (notificationController.createNotification as unknown as express.RequestHandler));
 app.get('/api/remuneration', protect as unknown as express.RequestHandler, (async (req: express.Request, res: express.Response) => {
   try {
     const user = await User.findById((req as any).user?.id);
