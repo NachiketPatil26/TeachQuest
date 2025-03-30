@@ -428,381 +428,181 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'This exam has no blocks defined. Please add blocks to this exam before auto-allocating teachers.' });
     }
 
-    // Get all teachers
+    // Get all active teachers with pagination
     const User = mongoose.model('User');
-    const teachers = await User.find({ role: 'teacher', active: true });
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const skip = (page - 1) * limit;
+
+    // Get teachers with availability information
+    const teachers = await User.find({ role: 'teacher', active: true })
+      .select('_id name email role active availability')
+      .skip(skip)
+      .limit(limit);
+
     if (!teachers || teachers.length === 0) {
       return res.status(400).json({ message: 'No active teachers found' });
     }
 
-    // Get all exams to check for conflicts
-    const allExams = await Exam.find({
-      date: exam.date,
-      _id: { $ne: exam._id } // Exclude current exam
-    });
-
-    // Filter teachers by availability (day of week)
+    // Get exam date and day of week
     const examDate = new Date(exam.date);
-    const weekday = examDate.toLocaleDateString('en-US', { weekday: 'long' });
-    
-    // Get teachers who are available on this day
+    const examDayOfWeek = examDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+    // Filter teachers by availability
     const availableTeachers = teachers.filter(teacher => 
-      teacher.availability && teacher.availability.includes(weekday)
+      teacher.availability && teacher.availability.includes(examDayOfWeek)
     );
 
     if (availableTeachers.length === 0) {
-      return res.status(400).json({ message: 'No teachers available on this day' });
+      return res.status(400).json({ 
+        message: `No teachers available on ${examDayOfWeek}`,
+        examDate: exam.date,
+        requiredDay: examDayOfWeek
+      });
     }
 
-    // Filter out teachers with time conflicts
-    const teachersWithoutConflicts = availableTeachers.filter(teacher => {
-      return !allExams.some(otherExam => {
-        // Check if teacher is allocated to this exam
-        const isAllocated = otherExam.allocatedTeachers.some(t => t.toString() === teacher._id.toString());
-        
-        // Check if teacher is an invigilator in any block
-        const isInvigilator = otherExam.blocks?.some(block => 
-          block.invigilator && block.invigilator.toString() === teacher._id.toString()
-        );
-        
-        if (!isAllocated && !isInvigilator) return false;
-        
-        // Check time overlap
-        const otherStart = otherExam.startTime;
-        const otherEnd = otherExam.endTime;
-        const examStart = exam.startTime;
-        const examEnd = exam.endTime;
-        
-        // Time overlap check: not (end1 <= start2 or end2 <= start1)
-        return !(otherEnd <= examStart || examEnd <= otherStart);
-      });
-    });
-
-    // Constraint relaxation strategy - if no teachers without conflicts, allow some conflicts
-    // but only if they don't overlap completely with the current exam
-    if (teachersWithoutConflicts.length === 0) {
-      console.log('No teachers without conflicts, relaxing constraints...');
-      const teachersWithPartialConflicts = availableTeachers.filter(teacher => {
-        return !allExams.some(otherExam => {
-          // Check if teacher is allocated to this exam
-          const isAllocated = otherExam.allocatedTeachers.some(t => t.toString() === teacher._id.toString());
-          
-          // Check if teacher is an invigilator in any block
-          const isInvigilator = otherExam.blocks?.some(block => 
-            block.invigilator && block.invigilator.toString() === teacher._id.toString()
-          );
-          
-          if (!isAllocated && !isInvigilator) return false;
-          
-          // Check for complete time overlap (stricter check)
-          const otherStart = otherExam.startTime;
-          const otherEnd = otherExam.endTime;
-          const examStart = exam.startTime;
-          const examEnd = exam.endTime;
-          
-          // Complete overlap check: exam is completely contained within other exam
-          return examStart >= otherStart && examEnd <= otherEnd;
-        });
-      });
-      
-      if (teachersWithPartialConflicts.length > 0) {
-        console.log(`Found ${teachersWithPartialConflicts.length} teachers with partial conflicts after relaxing constraints`);
-        teachersWithoutConflicts.push(...teachersWithPartialConflicts);
-      } else {
-        return res.status(400).json({ message: 'All available teachers have complete time conflicts' });
-      }
-    }
-
-    // Calculate weighted scores for each teacher based on multiple factors
-    const teacherScores = teachersWithoutConflicts.map(teacher => {
-      let score = 0;
-      
-      // 1. Subject expertise score (0-5 points)
-      // Check if teacher has expertise in this subject
-      if (teacher.subjectExpertise && teacher.subjectExpertise.length > 0) {
-        const expertiseEntry = teacher.subjectExpertise.find(entry => 
-          entry.subject.toLowerCase() === exam.subject.toLowerCase() ||
-          exam.subject.toLowerCase().includes(entry.subject.toLowerCase()) ||
-          entry.subject.toLowerCase().includes(exam.subject.toLowerCase())
-        );
-        
-        if (expertiseEntry) {
-          // Add expertise level (1-5) to score
-          score += expertiseEntry.level;
-        } else {
-          // Check if teacher teaches this subject (fallback to old method)
-          const teachesSubject = teacher.subjects?.some(subject => 
-            subject.toLowerCase() === exam.subject.toLowerCase() ||
-            exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
-            subject.toLowerCase().includes(exam.subject.toLowerCase())
-          );
-          
-          if (teachesSubject) {
-            score += 3; // Default medium expertise if they teach the subject but no expertise level set
-          }
-        }
-      } else {
-        // Fallback to old method if no expertise data
-        const teachesSubject = teacher.subjects?.some(subject => 
-          subject.toLowerCase() === exam.subject.toLowerCase() ||
-          exam.subject.toLowerCase().includes(subject.toLowerCase()) ||
-          subject.toLowerCase().includes(exam.subject.toLowerCase())
-        );
-        
-        if (teachesSubject) {
-          score += 3; // Default medium expertise
-        }
-      }
-      
-      // 2. Subject preference score (0-5 points)
-      if (teacher.subjectPreferences && teacher.subjectPreferences.length > 0) {
-        const preferenceEntry = teacher.subjectPreferences.find(entry => 
-          entry.subject.toLowerCase() === exam.subject.toLowerCase() ||
-          exam.subject.toLowerCase().includes(entry.subject.toLowerCase()) ||
-          entry.subject.toLowerCase().includes(exam.subject.toLowerCase())
-        );
-        
-        if (preferenceEntry) {
-          score += preferenceEntry.preference;
-        }
-      }
-      
-      // 3. Time preference score (0-5 points)
-      if (teacher.timePreferences && teacher.timePreferences.length > 0) {
-        // Create a time slot string in format "HH:MM-HH:MM"
-        const examTimeSlot = `${exam.startTime}-${exam.endTime}`;
-        
-        const timePreferenceEntry = teacher.timePreferences.find(entry => 
-          entry.slot === examTimeSlot ||
-          entry.slot.includes(exam.startTime) ||
-          entry.slot.includes(exam.endTime)
-        );
-        
-        if (timePreferenceEntry) {
-          score += timePreferenceEntry.preference;
-        }
-      }
-      
-      return {
-        teacher,
-        score
-      };
-    });
+    // Get all exams to calculate workload - optimize query
+    const allExams = await Exam.find({})
+      .select('allocatedTeachers blocks.invigilator date')
+      .lean(); // Use lean() for better performance
     
-    // Sort teachers by score (descending)
-    const sortedTeachers = teacherScores
-      .sort((a, b) => b.score - a.score)
-      .map(item => item.teacher);
-    
-    // Get teacher workload (number of allocations) - enhanced to consider historical allocations
+    // Calculate workload for each available teacher using time-based weighting
     const teacherWorkload = new Map();
+    const currentDate = new Date();
     
-    // Initialize workload counter for all teachers
-    teacherScores.forEach(item => {
-      teacherWorkload.set(item.teacher._id.toString(), 0);
+    // Initialize workload counter for available teachers only
+    availableTeachers.forEach(teacher => {
+      teacherWorkload.set(teacher._id.toString(), {
+        total: 0,
+        recent: 0, // Last 7 days
+        sameDay: 0, // Same day as current exam
+        availability: teacher.availability
+      });
     });
     
-    // Count existing allocations for each teacher (including historical data)
-    // This now considers all exams, not just current ones
-    const allExamsWithAllocations = await Exam.find({});
-    allExamsWithAllocations.forEach(e => {
+    // Count existing allocations for each teacher with time-based weighting
+    allExams.forEach(e => {
+      const examDate = new Date(e.date);
+      const daysDifference = Math.abs((examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+      const isRecent = daysDifference <= 7;
+      const isSameDay = examDate.toDateString() === new Date(exam.date).toDateString();
+      
       // Count general allocations
-      if (e.allocatedTeachers && e.allocatedTeachers.length > 0) {
+      if (e.allocatedTeachers?.length > 0) {
         e.allocatedTeachers.forEach(teacherId => {
           const id = teacherId.toString();
           if (teacherWorkload.has(id)) {
-            teacherWorkload.set(id, teacherWorkload.get(id) + 1);
+            const workload = teacherWorkload.get(id);
+            workload.total++;
+            if (isRecent) workload.recent++;
+            if (isSameDay) workload.sameDay++;
+            teacherWorkload.set(id, workload);
           }
         });
       }
       
       // Count block invigilator assignments
-      if (e.blocks && e.blocks.length > 0) {
+      if (e.blocks?.length > 0) {
         e.blocks.forEach(block => {
           if (block.invigilator) {
             const id = block.invigilator.toString();
             if (teacherWorkload.has(id)) {
-              teacherWorkload.set(id, teacherWorkload.get(id) + 1);
+              const workload = teacherWorkload.get(id);
+              workload.total++;
+              if (isRecent) workload.recent++;
+              if (isSameDay) workload.sameDay++;
+              teacherWorkload.set(id, workload);
             }
           }
         });
       }
     });
     
-    // Update teacher scores with workload factor (inverse relationship - lower workload = higher score)
-    const maxWorkload = Math.max(...Array.from(teacherWorkload.values()), 1); // Avoid division by zero
+    // Calculate weighted workload scores with error handling
+    const maxTotal = Math.max(...Array.from(teacherWorkload.values()).map(w => w.total), 1);
+    const maxRecent = Math.max(...Array.from(teacherWorkload.values()).map(w => w.recent), 1);
+    const maxSameDay = Math.max(...Array.from(teacherWorkload.values()).map(w => w.sameDay), 1);
     
-    // Update scores with workload factor and geographic proximity
-    const teacherScoresWithWorkload = teacherScores.map(item => {
-      const workload = teacherWorkload.get(item.teacher._id.toString()) || 0;
-      
-      // Workload score: 0-5 points (inverse relationship - lower workload = higher score)
-      // Teachers with lower workload get higher scores
-      const workloadScore = 5 * (1 - (workload / maxWorkload));
-      
-      // Geographic proximity score (0-5 points)
-      // If the exam has blocks with locations, calculate proximity score
-      let proximityScore = 0;
-      if (exam.blocks && exam.blocks.length > 0 && exam.blocks.some(b => b.location)) {
-        // Check if teacher has other exams on the same day
-        const teacherExamsOnSameDay = allExamsWithAllocations.filter(e => {
-          const examDate = new Date(e.date);
-          const currentExamDate = new Date(exam.date);
-          
-          // Check if dates are the same
-          if (examDate.getFullYear() !== currentExamDate.getFullYear() ||
-              examDate.getMonth() !== currentExamDate.getMonth() ||
-              examDate.getDate() !== currentExamDate.getDate()) {
-            return false;
-          }
-          
-          // Check if teacher is allocated to this exam
-          return e.allocatedTeachers.some(t => t.toString() === item.teacher._id.toString()) ||
-                 e.blocks?.some(block => block.invigilator && 
-                   block.invigilator.toString() === item.teacher._id.toString());
-        });
+    const teacherScores = availableTeachers.map(teacher => {
+      try {
+        const workload = teacherWorkload.get(teacher._id.toString()) || { 
+          total: 0, 
+          recent: 0, 
+          sameDay: 0,
+          availability: teacher.availability 
+        };
         
-        if (teacherExamsOnSameDay.length > 0) {
-          // If teacher has other exams on the same day, prioritize proximity
-          // Simple implementation: if locations match, give higher score
-          const examLocations = exam.blocks
-            .filter(b => b.location)
-            .map(b => b.location.toLowerCase());
-          
-          const otherExamLocations = teacherExamsOnSameDay
-            .flatMap(e => e.blocks || [])
-            .filter(b => b.location)
-            .map(b => b.location.toLowerCase());
-          
-          // Check for location matches
-          const locationMatches = examLocations.filter(loc => 
-            otherExamLocations.some(otherLoc => 
-              otherLoc === loc || otherLoc.includes(loc) || loc.includes(otherLoc)
-            )
-          ).length;
-          
-          // Calculate proximity score based on location matches
-          proximityScore = locationMatches > 0 ? 5 : 0;
-        } else {
-          // If no other exams on same day, proximity doesn't matter
-          proximityScore = 3; // Neutral score
-        }
+        // Calculate weighted scores
+        const totalScore = 5 * (1 - (workload.total / maxTotal)); // 50% weight
+        const recentScore = 3 * (1 - (workload.recent / maxRecent)); // 30% weight
+        const sameDayScore = 2 * (1 - (workload.sameDay / maxSameDay)); // 20% weight
+        
+        // Calculate final score (0-10 scale)
+        const finalScore = totalScore + recentScore + sameDayScore;
+        
+        return {
+          teacher,
+          score: finalScore,
+          workload,
+          breakdown: {
+            totalScore,
+            recentScore,
+            sameDayScore
+          }
+        };
+      } catch (error) {
+        console.error(`Error calculating score for teacher ${teacher._id}:`, error);
+        return {
+          teacher,
+          score: 0,
+          workload: { 
+            total: 0, 
+            recent: 0, 
+            sameDay: 0,
+            availability: teacher.availability 
+          },
+          breakdown: { totalScore: 0, recentScore: 0, sameDayScore: 0 }
+        };
       }
-      
-      // Calculate final score with all factors
-      // Subject expertise and preference: 0-10 points (from previous calculation)
-      // Workload: 0-5 points
-      // Proximity: 0-5 points
-      const finalScore = item.score + workloadScore + proximityScore;
-      
-      return {
-        teacher: item.teacher,
-        score: finalScore,
-        factors: {
-          subjectScore: item.score,
-          workloadScore,
-          proximityScore
-        }
-      };
     });
     
-    // Sort teachers by final score (descending)
-    const sortedByScore = teacherScoresWithWorkload
+    // Sort teachers by weighted score (descending)
+    const sortedTeachers = teacherScores
       .sort((a, b) => b.score - a.score)
       .map(item => item.teacher);
     
     // Allocate teachers to the exam based on the number of blocks
-    let numTeachersToAllocate = 0;
+    const numTeachersToAllocate = exam.blocks.length;
     
-    // If the exam has blocks, allocate one teacher per block
-    if (exam.blocks && exam.blocks.length > 0) {
-      numTeachersToAllocate = exam.blocks.length;
-    } else {
-      // If no blocks, allocate 2-3 teachers based on subject importance
-      numTeachersToAllocate = Math.min(3, sortedByScore.length);
-    }
-    
-    // Select teachers based on the optimized scoring system
-    const selectedTeachers = sortedByScore.slice(0, numTeachersToAllocate);
+    // Select teachers with lowest weighted workload
+    const selectedTeachers = sortedTeachers.slice(0, numTeachersToAllocate);
     
     // Update the exam with allocated teachers
     exam.allocatedTeachers = selectedTeachers.map(teacher => teacher._id);
     
-    // If the exam has blocks, assign invigilators to each block
+    // Assign invigilators to blocks with error handling
     if (exam.blocks && exam.blocks.length > 0) {
-      // Get teachers not already allocated to this exam for block assignments
-      const remainingTeachers = sortedByScore.filter(teacher => 
-        !selectedTeachers.some(t => t._id.toString() === teacher._id.toString())
-      );
-      
-      // Assign invigilators to blocks based on location proximity and expertise
-      for (let i = 0; i < exam.blocks.length; i++) {
-        const block = exam.blocks[i];
+      try {
+        // Get remaining teachers (not already allocated to this exam)
+        const remainingTeachers = sortedTeachers.filter(teacher => 
+          !selectedTeachers.some(t => t._id.toString() === teacher._id.toString())
+        );
         
-        // Skip if block already has an invigilator
-        if (block.invigilator) continue;
-        
-        // If we have remaining teachers, assign based on location and expertise
-        if (remainingTeachers.length > 0) {
-          // If block has a location, try to find teachers with proximity to this location
-          if (block.location) {
-            // Find teachers who have expertise in the subject and are close to this location
-            const teachersWithProximity = remainingTeachers.filter(teacher => {
-              // Check if teacher has other exams on the same day with the same location
-              const hasNearbyExam = allExamsWithAllocations.some(e => {
-                // Check if dates match
-                const examDate = new Date(e.date);
-                const currentExamDate = new Date(exam.date);
-                if (examDate.getFullYear() !== currentExamDate.getFullYear() ||
-                    examDate.getMonth() !== currentExamDate.getMonth() ||
-                    examDate.getDate() !== currentExamDate.getDate()) {
-                  return false;
-                }
-                
-                // Check if teacher is allocated to this exam
-                const isAllocated = e.allocatedTeachers.some(t => 
-                  t.toString() === teacher._id.toString()
-                );
-                
-                // Check if teacher is an invigilator in any block with matching location
-                const isInvigilatorWithLocation = e.blocks?.some(b => 
-                  b.invigilator && 
-                  b.invigilator.toString() === teacher._id.toString() &&
-                  b.location && (
-                    b.location.toLowerCase() === block.location.toLowerCase() ||
-                    b.location.toLowerCase().includes(block.location.toLowerCase()) ||
-                    block.location.toLowerCase().includes(b.location.toLowerCase())
-                  )
-                );
-                
-                return isAllocated || isInvigilatorWithLocation;
-              });
-              
-              return hasNearbyExam;
-            });
-            
-            // If we found teachers with proximity, use them first
-            if (teachersWithProximity.length > 0) {
-              block.invigilator = teachersWithProximity[0]._id;
-              // Remove this teacher from the remaining pool
-              const index = remainingTeachers.findIndex(t => 
-                t._id.toString() === teachersWithProximity[0]._id.toString()
-              );
-              if (index !== -1) {
-                remainingTeachers.splice(index, 1);
-              }
-              continue;
-            }
-          }
-          // If no teachers with proximity, use the next available teacher based on score
+        // Assign invigilators to blocks
+        for (let i = 0; i < exam.blocks.length; i++) {
+          const block = exam.blocks[i];
+          
+          // Skip if block already has an invigilator
+          if (block.invigilator) continue;
+          
+          // Assign the next available teacher with lowest weighted workload
           if (i < remainingTeachers.length) {
             block.invigilator = remainingTeachers[i]._id;
-            // Remove this teacher from the remaining pool
             remainingTeachers.splice(i, 1);
-          } else if (sortedByScore.length > 0) {
+          } else if (sortedTeachers.length > 0) {
             // If we run out of remaining teachers, use teachers from the main pool
             // but avoid assigning the same teacher to multiple blocks
-            const availableTeachers = sortedByScore.filter(teacher => 
+            const availableTeachers = sortedTeachers.filter(teacher => 
               !exam.blocks.some(b => 
                 b.invigilator && b.invigilator.toString() === teacher._id.toString()
               )
@@ -813,27 +613,70 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
             }
           }
         }
+      } catch (error) {
+        console.error('Error assigning invigilators to blocks:', error);
+        // Continue with the process even if block assignment fails
       }
     }
     
-    // Log allocation results for debugging
-    console.log(`Auto-allocated ${selectedTeachers.length} teachers to exam ${exam._id}`);
-    if (exam.blocks && exam.blocks.length > 0) {
-      const assignedBlocks = exam.blocks.filter(b => b.invigilator).length;
-      console.log(`Assigned invigilators to ${assignedBlocks}/${exam.blocks.length} blocks`);
-    }
+    // Log allocation results with more details
+    console.log('Auto-allocation results:', {
+      examId: exam._id,
+      examName: exam.examName,
+      examDate: exam.date,
+      examDay: examDayOfWeek,
+      totalTeachers: teachers.length,
+      availableTeachers: availableTeachers.length,
+      allocatedTeachers: selectedTeachers.length,
+      blocks: exam.blocks?.length || 0,
+      assignedBlocks: exam.blocks?.filter(b => b.invigilator).length || 0,
+      workloadDistribution: Array.from(teacherWorkload.entries()).map(([id, workload]) => ({
+        teacherId: id,
+        totalWorkload: workload.total,
+        recentWorkload: workload.recent,
+        sameDayWorkload: workload.sameDay,
+        availability: workload.availability
+      }))
+    });
     
-    // Save the updated exam
-    await exam.save();
+    // Save the updated exam with error handling
+    try {
+      await exam.save();
+    } catch (error) {
+      console.error('Error saving exam:', error);
+      return res.status(500).json({ message: 'Failed to save exam allocation' });
+    }
     
     // Return the updated exam with populated teacher details
     const updatedExam = await Exam.findById(id)
-      .populate('allocatedTeachers', 'name email');
+      .populate('allocatedTeachers', 'name email')
+      .lean(); // Use lean() for better performance
     
-    res.json(updatedExam);
+    res.json({
+      exam: updatedExam,
+      allocationStats: {
+        examDate: exam.date,
+        examDay: examDayOfWeek,
+        totalTeachers: teachers.length,
+        availableTeachers: availableTeachers.length,
+        allocatedTeachers: selectedTeachers.length,
+        blocks: exam.blocks?.length || 0,
+        assignedBlocks: exam.blocks?.filter(b => b.invigilator).length || 0,
+        workloadDistribution: Array.from(teacherWorkload.entries()).map(([id, workload]) => ({
+          teacherId: id,
+          totalWorkload: workload.total,
+          recentWorkload: workload.recent,
+          sameDayWorkload: workload.sameDay,
+          availability: workload.availability
+        }))
+      }
+    });
   } catch (error) {
     console.error('Auto-allocate teachers error:', error);
-    res.status(500).json({ message: 'Failed to auto-allocate teachers', error: error.message });
+    res.status(500).json({ 
+      message: 'Failed to auto-allocate teachers', 
+      error: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
   }
 };
 
