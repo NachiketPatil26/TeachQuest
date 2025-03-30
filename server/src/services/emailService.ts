@@ -120,18 +120,41 @@ const createExamAllocationEmail = (teacherName: string, exam: IExam, blockNumber
   `;
 };
 
-export const sendExamAllocationEmail = async (teacherEmail: string, teacherName: string, exam: IExam, blockNumber?: number) => {
+export const sendExamAllocationEmail = async (
+  email: string,
+  teacherName: string,
+  exam: any,
+  blockNumbers: number[]
+) => {
   try {
-    const mailOptions: EmailOptions = {
-      to: teacherEmail,
-      subject: `Exam Invigilation Assignment - ${exam.subject}`,
-      html: createExamAllocationEmail(teacherName, exam, blockNumber)
-    };
+    const emailContent = `
+      Dear ${teacherName},
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent successfully to ${teacherEmail}`);
+      You have been allocated to invigilate the following exam blocks:
+
+      ${blockNumbers.map(blockNumber => `
+        Block ${blockNumber}:
+        Subject: ${exam.subject}
+        Date: ${new Date(exam.date).toLocaleDateString()}
+        Time: ${exam.startTime} - ${exam.endTime}
+        Location: ${exam.blocks.find((b: any) => b.number === blockNumber)?.location || 'TBD'}
+        Capacity: ${exam.blocks.find((b: any) => b.number === blockNumber)?.capacity || 'TBD'} students
+      `).join('\n')}
+
+      Best regards,
+      Exam Management Team
+    `.trim();
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to: email,
+      subject: 'New Exam Invigilation Assignment',
+      html: emailContent.replace(/\n/g, '<br>')
+    });
+
+    console.log(`Email sent successfully to ${email}`);
   } catch (error) {
     console.error('Error sending email:', error);
-    throw new Error('Failed to send email notification');
+    throw error;
   }
 }; 

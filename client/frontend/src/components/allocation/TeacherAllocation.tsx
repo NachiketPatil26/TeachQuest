@@ -33,6 +33,8 @@ interface ExamSlot {
   allocatedTeachers: string[];
   blockCapacity?: number;
   blocks?: Block[];
+  allocatedTeachersCount: number;
+  hasAllocations: boolean;
 }
 
 // Improved availability check with better date handling
@@ -360,8 +362,6 @@ export default function TeacherAllocation() {
     }
   };
 
-
-
   const handleAllocation = () => {
     console.log('Starting teacher allocation process...');
     
@@ -560,10 +560,11 @@ export default function TeacherAllocation() {
         }
       }
       
-      // Refresh the data to show the updated allocations
+      showNotification('success', 'Auto-allocation completed successfully!');
+      
+      // Fetch updated data after auto-allocation is complete
       await fetchData();
       
-      showNotification('success', 'Auto-allocation completed successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to auto-allocate teachers';
       console.error('Error auto-allocating teachers:', error);
@@ -789,23 +790,14 @@ export default function TeacherAllocation() {
                             <td className="px-6 py-4">
                               {examSlot.blocks?.length ? (
                                 <div className="flex flex-col">
-                                  {examSlot.blocks.map((block, index) => {
-                                    const invigilatorTeacher = teachers.find(t => t._id === block.invigilator);
-                                    return (
-                                      <div key={index} className="flex items-center mb-1 text-sm">
-                                        <span className="font-medium mr-1">Block {block.number}</span>
-                                        <span className="text-xs text-gray-500">
-                                          ({block.capacity} seats, {block.location})
-                                        </span>
-                                        {block.invigilator && invigilatorTeacher && (
-                                          <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full flex items-center">
-                                            <Check size={12} className="mr-1" />
-                                            {invigilatorTeacher.name}
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
+                                  {examSlot.blocks.map((block, index) => (
+                                    <div key={index} className="flex items-center mb-1 text-sm">
+                                      <span className="font-medium mr-1">Block {block.number}</span>
+                                      <span className="text-xs text-gray-500">
+                                        ({block.capacity} seats, {block.location})
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
                               ) : (
                                 <span className="text-gray-500">No blocks defined</span>
@@ -813,15 +805,32 @@ export default function TeacherAllocation() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex flex-wrap gap-1">
-                                {examSlot.allocatedTeachers?.map((teacherId) => {
-                                  const teacher = teachers.find(t => t._id === teacherId);
-                                  return teacher ? (
-                                    <span key={teacherId} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                      {teacher.name}
-                                    </span>
-                                  ) : null;
-                                })}
-                                {(!examSlot.allocatedTeachers || examSlot.allocatedTeachers.length === 0) && (
+                                {examSlot.blocks?.some(block => block.invigilator) || examSlot.allocatedTeachers?.length > 0 ? (
+                                  <div className="flex flex-col gap-1">
+                                    {/* Show block invigilators */}
+                                    {examSlot.blocks?.map(block => {
+                                      if (block.invigilator) {
+                                        const teacher = teachers.find(t => t._id === block.invigilator);
+                                        return teacher ? (
+                                          <span key={`block-${block.number}`} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Block {block.number}: {teacher.name}
+                                          </span>
+                                        ) : null;
+                                      }
+                                      return null;
+                                    })}
+                                    
+                                    {/* Show directly allocated teachers */}
+                                    {examSlot.allocatedTeachers?.map(teacherId => {
+                                      const teacher = teachers.find(t => t._id === teacherId);
+                                      return teacher ? (
+                                        <span key={teacherId} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                          {teacher.name}
+                                        </span>
+                                      ) : null;
+                                    })}
+                                  </div>
+                                ) : (
                                   <span className="text-gray-500">No teachers allocated</span>
                                 )}
                               </div>
@@ -832,9 +841,7 @@ export default function TeacherAllocation() {
                                 aria-label={`Allocate teachers to ${examSlot.subject} exam`}
                                 className="text-[#9FC0AE] hover:text-[#8BAF9A] font-medium"
                               >
-                                {selectedSlot === examSlot._id ? 'Cancel Selection' : 
-                                  examSlot.allocatedTeachers && examSlot.allocatedTeachers.length > 0 ? 
-                                  'Edit Allocation' : 'Allocate Teachers'}
+                                Allocate Teachers
                               </button>
                             </td>
                           </tr>
