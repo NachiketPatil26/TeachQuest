@@ -12,10 +12,11 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
       return res.status(400).json({ message: 'Branch parameter is required' });
     }
 
-    // Get all teachers from the branch
+    // Get all teachers
+    // Note: We're not filtering by branch here because teachers might not have branch field set
+    // in their User document, but are instead associated with branches in the Branch collection
     const teachers = await User.find({ 
       role: 'teacher',
-      branch: branch,
       active: true
     }).select('_id name email');
 
@@ -29,9 +30,15 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
       
       // Count exam duties (being in allocatedTeachers)
       exams.forEach(exam => {
-        if (exam.allocatedTeachers.includes(teacher._id)) {
+        // Check if teacher is in allocatedTeachers by comparing string representations of ObjectIds
+        const isAllocated = exam.allocatedTeachers.some(teacherId => 
+          teacherId.toString() === teacher._id.toString()
+        );
+        
+        if (isAllocated) {
           totalDuties++;
         }
+        
         // Count block invigilation duties
         if (exam.blocks) {
           exam.blocks.forEach(block => {
@@ -42,13 +49,48 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
         }
       });
 
+      // Calculate completed and upcoming duties based on exam dates
+      const now = new Date();
+      let completedDuties = 0;
+      let upcomingDuties = 0;
+      
+      exams.forEach(exam => {
+        const examDate = new Date(exam.date);
+        const isAllocated = exam.allocatedTeachers.some(teacherId => 
+          teacherId.toString() === teacher._id.toString()
+        );
+        
+        if (isAllocated) {
+          if (examDate < now) {
+            completedDuties++;
+          } else {
+            upcomingDuties++;
+          }
+        }
+        
+        // Count block invigilation duties
+        if (exam.blocks) {
+          exam.blocks.forEach(block => {
+            if (block.invigilator && block.invigilator.toString() === teacher._id.toString()) {
+              if (examDate < now) {
+                completedDuties++;
+              } else {
+                upcomingDuties++;
+              }
+            }
+          });
+        }
+      });
+      
       return {
-        _id: teacher._id,
-        name: teacher.name,
+        teacherId: teacher._id,
+        teacherName: teacher.name,
         email: teacher.email,
-        duties: totalDuties
+        totalDuties: totalDuties,
+        completedDuties: completedDuties,
+        upcomingDuties: upcomingDuties
       };
-    }).sort((a, b) => b.duties - a.duties); // Sort by duties in descending order
+    }).sort((a, b) => b.totalDuties - a.totalDuties); // Sort by duties in descending order
 
     // Calculate workload distribution metrics
     const workloadMetrics = [
@@ -59,7 +101,7 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
     ];
 
     teacherWorkload.forEach(teacher => {
-      const duties = teacher.duties;
+      const duties = teacher.totalDuties;
       if (duties === 0) workloadMetrics[0].count++;
       else if (duties <= 2) workloadMetrics[1].count++;
       else if (duties <= 5) workloadMetrics[2].count++;
@@ -71,7 +113,7 @@ export const getTeacherWorkloadAnalytics = async (req: Request, res: Response) =
       workloadMetrics,
       totalTeachers: teachers.length,
       averageDutiesPerTeacher: teachers.length > 0 
-        ? (teacherWorkload.reduce((sum, item) => sum + item.duties, 0) / teachers.length).toFixed(1)
+        ? (teacherWorkload.reduce((sum, item) => sum + item.totalDuties, 0) / teachers.length).toFixed(1)
         : '0'
     });
   } catch (error) {
@@ -200,10 +242,11 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
       query.semester = semesterNum;
     }
 
-    // Get all teachers from the branch
+    // Get all teachers
+    // Note: We're not filtering by branch here because teachers might not have branch field set
+    // in their User document, but are instead associated with branches in the Branch collection
     const teachers = await User.find({ 
       role: 'teacher',
-      branch: branch,
       active: true
     }).select('_id name email');
 
@@ -217,9 +260,15 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
       
       // Count exam duties (being in allocatedTeachers)
       exams.forEach(exam => {
-        if (exam.allocatedTeachers.includes(teacher._id)) {
+        // Check if teacher is in allocatedTeachers by comparing string representations of ObjectIds
+        const isAllocated = exam.allocatedTeachers.some(teacherId => 
+          teacherId.toString() === teacher._id.toString()
+        );
+        
+        if (isAllocated) {
           totalDuties++;
         }
+        
         // Count block invigilation duties
         if (exam.blocks) {
           exam.blocks.forEach(block => {
@@ -230,13 +279,48 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
         }
       });
 
+      // Calculate completed and upcoming duties based on exam dates
+      const now = new Date();
+      let completedDuties = 0;
+      let upcomingDuties = 0;
+      
+      exams.forEach(exam => {
+        const examDate = new Date(exam.date);
+        const isAllocated = exam.allocatedTeachers.some(teacherId => 
+          teacherId.toString() === teacher._id.toString()
+        );
+        
+        if (isAllocated) {
+          if (examDate < now) {
+            completedDuties++;
+          } else {
+            upcomingDuties++;
+          }
+        }
+        
+        // Count block invigilation duties
+        if (exam.blocks) {
+          exam.blocks.forEach(block => {
+            if (block.invigilator && block.invigilator.toString() === teacher._id.toString()) {
+              if (examDate < now) {
+                completedDuties++;
+              } else {
+                upcomingDuties++;
+              }
+            }
+          });
+        }
+      });
+      
       return {
-        _id: teacher._id,
-        name: teacher.name,
+        teacherId: teacher._id,
+        teacherName: teacher.name,
         email: teacher.email,
-        duties: totalDuties
+        totalDuties: totalDuties,
+        completedDuties: completedDuties,
+        upcomingDuties: upcomingDuties
       };
-    }).sort((a, b) => b.duties - a.duties); // Sort by duties in descending order
+    }).sort((a, b) => b.totalDuties - a.totalDuties); // Sort by duties in descending order
 
     // Calculate workload distribution metrics
     const workloadMetrics = [
@@ -247,7 +331,7 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
     ];
 
     teacherWorkload.forEach(teacher => {
-      const duties = teacher.duties;
+      const duties = teacher.totalDuties;
       if (duties === 0) workloadMetrics[0].count++;
       else if (duties <= 2) workloadMetrics[1].count++;
       else if (duties <= 5) workloadMetrics[2].count++;
@@ -281,7 +365,7 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
       workloadMetrics,
       totalTeachers: teachers.length,
       averageDutiesPerTeacher: teachers.length > 0 
-        ? (teacherWorkload.reduce((sum, item) => sum + item.duties, 0) / teachers.length).toFixed(1)
+        ? (teacherWorkload.reduce((sum, item) => sum + item.totalDuties, 0) / teachers.length).toFixed(1)
         : '0',
       subjectDistribution,
       totalExams: exams.length,

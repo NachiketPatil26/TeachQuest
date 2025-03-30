@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { Check, AlertCircle, Calendar, Clock, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { Check, AlertCircle, Calendar, Clock,  AlertTriangle, Sparkles } from 'lucide-react';
 import { getTeachers, getExams, allocateTeachers, assignInvigilator, autoAllocateTeachers } from '../../services/api';
 import api from '../../services/api';
 
@@ -789,38 +789,42 @@ export default function TeacherAllocation() {
                             <td className="px-6 py-4">
                               {examSlot.blocks?.length ? (
                                 <div className="flex flex-col">
-                                  {examSlot.blocks.map((block, index) => (
-                                    <div key={index} className="flex items-center mb-1 text-sm">
-                                      <span className="font-medium mr-1">Block {block.number}</span>
-                                      <span className="text-xs text-gray-500">
-                                        ({block.capacity} seats, {block.location})
-                                      </span>
-                                      {block.invigilator && (
-                                        <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">
-                                          Assigned
+                                  {examSlot.blocks.map((block, index) => {
+                                    const invigilatorTeacher = teachers.find(t => t._id === block.invigilator);
+                                    return (
+                                      <div key={index} className="flex items-center mb-1 text-sm">
+                                        <span className="font-medium mr-1">Block {block.number}</span>
+                                        <span className="text-xs text-gray-500">
+                                          ({block.capacity} seats, {block.location})
                                         </span>
-                                      )}
-                                    </div>
-                                  ))}
+                                        {block.invigilator && invigilatorTeacher && (
+                                          <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full flex items-center">
+                                            <Check size={12} className="mr-1" />
+                                            {invigilatorTeacher.name}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               ) : (
-                                <span>{examSlot.block || 'No block specified'}</span>
+                                <span className="text-gray-500">No blocks defined</span>
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <Users size={16} className="mr-2 text-gray-400" />
-                                <span className="font-medium">{examSlot.allocatedTeachers?.length || 0}</span>
-                                <span className="text-gray-500 ml-1">allocated</span>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {examSlot.allocatedTeachers?.map((teacherId) => {
+                                  const teacher = teachers.find(t => t._id === teacherId);
+                                  return teacher ? (
+                                    <span key={teacherId} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                      {teacher.name}
+                                    </span>
+                                  ) : null;
+                                })}
+                                {(!examSlot.allocatedTeachers || examSlot.allocatedTeachers.length === 0) && (
+                                  <span className="text-gray-500">No teachers allocated</span>
+                                )}
                               </div>
-                              {examSlot.allocatedTeachers?.length > 0 && (
-                                <div className="mt-1 text-xs text-gray-500">
-                                  {examSlot.allocatedTeachers.map(teacherId => {
-                                    const teacher = teachers.find(t => t._id === teacherId);
-                                    return teacher ? teacher.name : '';
-                                  }).join(', ')}
-                                </div>
-                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button
