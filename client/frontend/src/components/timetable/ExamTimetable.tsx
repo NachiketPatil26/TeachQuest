@@ -130,8 +130,17 @@ export default function ExamTimetable(): React.ReactElement {
   // Helper function to check if a time is in the past for today
   const isTimeInPast = (date: string, time: string): boolean => {
     const today = new Date();
+    const selectedDate = new Date(date);
     const selectedDateTime = new Date(`${date}T${time}`);
-    return selectedDateTime < today;
+    
+    // If selected date is today, compare times
+    if (selectedDate.toDateString() === today.toDateString()) {
+      const now = new Date();
+      return selectedDateTime < now;
+    }
+    
+    // If selected date is in the future, time cannot be in the past
+    return false;
   };
 
   // Helper function to validate time range
@@ -158,12 +167,20 @@ export default function ExamTimetable(): React.ReactElement {
     setSelectedTime(newTimeState);
 
     if (selectedDate) {
-      if (isTimeInPast(selectedDate, newTime)) {
-        setTimeError('Cannot select a time in the past');
-      } else if (!isValidTimeRange(newTimeState.start, newTimeState.end)) {
+      // Clear any existing time errors first
+      setTimeError('');
+      
+      // Only check for past time if the date is today
+      if (new Date(selectedDate).toDateString() === new Date().toDateString()) {
+        if (isTimeInPast(selectedDate, newTime)) {
+          setTimeError('Cannot select a time in the past for today');
+          return;
+        }
+      }
+      
+      // Check if end time is after start time
+      if (newTimeState.start && newTimeState.end && !isValidTimeRange(newTimeState.start, newTimeState.end)) {
         setTimeError('End time must be after start time');
-      } else {
-        setTimeError('');
       }
     }
   };

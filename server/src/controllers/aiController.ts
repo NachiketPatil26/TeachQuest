@@ -361,24 +361,63 @@ const getExams = async (entities: any) => {
     throw new Error('Branch is required to fetch exams');
   }
   
-  // Build query object
-  const query: any = { branch };
+  // Build query object with case-insensitive branch name
+  const query: any = { 
+    branch: new RegExp(branch, 'i')  // Case insensitive search
+  };
   
-  // Add semester to query if provided
+  // Add semester to query if provided 
   if (semester) {
-    query.semester = semester;
+    query.semester = Number(semester);
   }
   
-  // Add examName to query if provided
+  // Add examName to query if provided (case insensitive)
   if (examName) {
-    query.examName = examName;
+    query.examName = new RegExp(examName, 'i');
   }
+
+  console.log('Debug: Query parameters:', query);
   
-  const exams = await Exam.find(query)
-    .populate('allocatedTeachers', 'name email')
-    .sort({ date: 1, startTime: 1 });
-  
-  return exams;
+  try {
+    const exams = await Exam.find(query)
+      .populate({
+        path: 'blocks.invigilator allocatedTeachers',
+        select: 'name email'
+      })
+      .sort({ date: 1, startTime: 1 });
+
+    console.log('Debug: Found exams:', exams.length);
+
+    if (!exams || exams.length === 0) {
+      return {
+        message: `No exams found for ${branch} branch${semester ? ` semester ${semester}` : ''}${examName ? ` with exam name ${examName}` : ''}`,
+        exams: []
+      };
+    }
+
+    // Format exam data for display
+    const formattedExams = exams.map(exam => ({
+      id: exam._id,
+      subject: exam.subject,
+      semester: exam.semester,
+      examName: exam.examName,
+      date: exam.date ? new Date(exam.date).toLocaleDateString() : 'Not set',
+      startTime: exam.startTime || 'Not set',
+      endTime: exam.endTime || 'Not set',
+      status: exam.status || 'scheduled',
+      blocks: exam.blocks?.length || 0,
+      allocatedTeachers: exam.allocatedTeachers?.length || 0
+    }));
+
+    return {
+      message: `Found ${exams.length} exams in ${branch} branch${semester ? ` for semester ${semester}` : ''}${examName ? ` with exam name ${examName}` : ''}`,
+      exams: formattedExams
+    };
+
+  } catch (error) {
+    console.error('Database query error:', error);
+    throw new Error('Failed to fetch exams from database');
+  }
 };
 
 /**
