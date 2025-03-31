@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  Calendar,
-  ClipboardList,
-  DollarSign,
+  // Calendar,
+  // ClipboardList,
+  // DollarSign,
   Bell,
   Search,
   LogOut,
   Menu,
   X,
-  Clock,
-  FileText,
-  MessageSquare
+  // Clock,
+  // FileText,
+  // MessageSquare
 } from 'lucide-react';
 import LogoTeacherDashboard from '../../assets/TeachQuestLogo.png';
 import TeacherDashboardImage from '../../assets/Teacher-pana.png';
@@ -53,28 +53,28 @@ interface UpcomingDuty {
 }
 
 // CardSkeleton Component
-function CardSkeleton() {
-  return (
-    <div className="bg-gray-200 p-6 rounded-lg shadow-md animate-pulse">
-      <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
-      <div className="h-6 bg-gray-300 rounded w-1/2 mb-4"></div>
-      <div className="h-6 bg-gray-300 rounded w-full"></div>
-    </div>
-  );
-}
+// function CardSkeleton() {
+//   return (
+//     <div className="bg-gray-200 p-6 rounded-lg shadow-md animate-pulse">
+//       <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
+//       <div className="h-6 bg-gray-300 rounded w-1/2 mb-4"></div>
+//       <div className="h-6 bg-gray-300 rounded w-full"></div>
+//     </div>
+//   );
+// }
 
-// DashboardCard Component
-function DashboardCard({ title, description, icon, onClick, bgColor }: { title: string; description: string; icon: React.ReactNode; onClick: () => void; bgColor?: string }) {
-  return (
-    <div className={`p-6 rounded-lg shadow-md cursor-pointer ${bgColor || 'bg-white'}`} onClick={onClick}>
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-semibold">{title}</div>
-        {icon}
-      </div>
-      <p className="text-gray-600">{description}</p>
-    </div>
-  );
-}
+// // DashboardCard Component
+// function DashboardCard({ title, description, icon, onClick, bgColor }: { title: string; description: string; icon: React.ReactNode; onClick: () => void; bgColor?: string }) {
+//   return (
+//     <div className={`p-6 rounded-lg shadow-md cursor-pointer ${bgColor || 'bg-white'}`} onClick={onClick}>
+//       <div className="flex items-center justify-between mb-4">
+//         <div className="text-lg font-semibold">{title}</div>
+//         {icon}
+//       </div>
+//       <p className="text-gray-600">{description}</p>
+//     </div>
+//   );
+// }
 interface StatsCardProps {
   title: string;
   value: number | string;
@@ -213,50 +213,50 @@ export default function TeacherDashboard() {
     return () => clearInterval(interval);
   }, [user]);
 
-  const dashboardCards = [
-    {
-      title: 'Upcoming Duties',
-      description: 'View your assigned examination duties',
-      icon: <Calendar size={24} />,
-      onClick: () => navigate('/teacher/duties'),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Exam Schedule',
-      description: 'Check examination timetables',
-      icon: <Clock size={24} />,
-      onClick: () => navigate('/teacher/schedule'),
-      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Submit Reports',
-      description: 'Submit examination duty reports',
-      icon: <FileText size={24} />,
-      onClick: () => navigate('/teacher/reports'),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Duty History',
-      description: 'View past examination duties',
-      icon: <ClipboardList size={24} />,
-      onClick: () => navigate('/teacher/history'),
-      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Remuneration',
-      description: 'Track payment and compensation',
-      icon: <DollarSign size={24} />,
-      onClick: () => navigate('/teacher/remuneration'),
-      bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    },
-    {
-      title: 'Support',
-      description: 'Get help and contact admin',
-      icon: <MessageSquare size={24} />,
-      onClick: () => navigate('/teacher/support'),
-      bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
-    }
-  ];
+  // const dashboardCards = [
+  //   {
+  //     title: 'Upcoming Duties',
+  //     description: 'View your assigned examination duties',
+  //     icon: <Calendar size={24} />,
+  //     onClick: () => navigate('/teacher/duties'),
+  //     bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   },
+  //   {
+  //     title: 'Exam Schedule',
+  //     description: 'Check examination timetables',
+  //     icon: <Clock size={24} />,
+  //     onClick: () => navigate('/teacher/schedule'),
+  //     bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   },
+  //   {
+  //     title: 'Submit Reports',
+  //     description: 'Submit examination duty reports',
+  //     icon: <FileText size={24} />,
+  //     onClick: () => navigate('/teacher/reports'),
+  //     bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   },
+  //   {
+  //     title: 'Duty History',
+  //     description: 'View past examination duties',
+  //     icon: <ClipboardList size={24} />,
+  //     onClick: () => navigate('/teacher/history'),
+  //     bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   },
+  //   {
+  //     title: 'Remuneration',
+  //     description: 'Track payment and compensation',
+  //     icon: <DollarSign size={24} />,
+  //     onClick: () => navigate('/teacher/remuneration'),
+  //     bgColor: 'bg-gradient-to-br from-[#D4ECDD] to-[#C2DFC5] text-black hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   },
+  //   {
+  //     title: 'Support',
+  //     description: 'Get help and contact admin',
+  //     icon: <MessageSquare size={24} />,
+  //     onClick: () => navigate('/teacher/support'),
+  //     bgColor: 'bg-white text-black border border-gray-300 hover:shadow-xl hover:scale-105 transition-transform duration-300 ease-in-out'
+  //   }
+  // ];
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -612,7 +612,7 @@ export default function TeacherDashboard() {
         </div>
         
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading ? (
             Array(6).fill(null).map((_, index) => (
               <CardSkeleton key={index} />
@@ -628,8 +628,9 @@ export default function TeacherDashboard() {
                 bgColor={card.bgColor}
               />
             ))
-          )}
-        </div>
+          )
+          }
+        </div> */}
 
       </main>
     </div>
