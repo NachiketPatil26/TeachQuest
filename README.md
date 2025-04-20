@@ -30,7 +30,7 @@ Before you begin, ensure you have the following installed:
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/teachquest.git
+git clone https://github.com/NachiketPatil26/TeachQuest.git
 cd teachquest
 ```
 
@@ -49,15 +49,30 @@ This will install dependencies for:
 1. Create a `.env` file in the server directory:
 ```bash
 cd server
-cp .env.example .env
+cp .env
 ```
 
 2. Update the `.env` file with your configuration:
 ```env
+# MongoDB Connection
+MONGODB_URI=mongodb+srv://nachiketpa26:3PDgmectZZP3U5Yg@cluster1.yrefb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1
+
+
+# Server Configuration
 PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
+NODE_ENV=development
+
+# Client URL
+CLIENT_URL=http://localhost:5173
+
+# JWT Secret
+# Change this to a strong, random string in production
+JWT_SECRET=teachquest_secure_jwt_secret_key_2024
+
 ```
+
+(For Chatbot API key, contact the repo owner or moderators)
+
 
 ## Running the Application
 
