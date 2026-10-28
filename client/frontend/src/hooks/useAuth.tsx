@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 interface User {
   id: string;
   role: 'admin' | 'teacher';
@@ -29,7 +31,7 @@ export function useAuth() {
 
   const login = async (credentials: { email: string; password: string; role: 'admin' | 'teacher' }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
+      const response = await fetch(`${API_URL}/api/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,12 +58,13 @@ export function useAuth() {
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
-      return { success: false, error: 'Login failed' };
+      return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
     }
   };
 
   const logout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

@@ -22,8 +22,9 @@ const router = express.Router();
 router.route('/login')
   .post(loginUser as unknown as express.RequestHandler);
 
+// Only admins can register new users (the first admin is created via seedAdmin)
 router.route('/register')
-  .post(registerUser as express.RequestHandler);
+  .post(protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler, registerUser as express.RequestHandler);
 
 // Protected routes
 router.route('/profile')

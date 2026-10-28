@@ -5,6 +5,11 @@ import Notification from '../models/Notification';
 import User from '../models/User';
 import { sendExamAllocationEmail } from '../services/emailService';
 
+// Check if two "HH:mm" time ranges overlap
+const timesOverlap = (startA: string, endA: string, startB: string, endB: string) => {
+  return startA < endB && startB < endA;
+};
+
 interface ExamRequest extends Request {
   user?: {
     id: string;
@@ -102,7 +107,6 @@ export const getExams = async (req: Request, res: Response) => {
     }
 
     const exams = await Exam.find(query)
-      .populate('blocks.invigilator', 'name email')
       .sort({ date: 1, startTime: 1 });
 
     // Add allocated teachers count and allocation status to each exam
@@ -277,6 +281,27 @@ export const assignInvigilator = async (req: Request, res: Response) => {
     // Initialize blocks array if it doesn't exist
     if (!exam.blocks) {
       exam.blocks = [];
+    }
+
+    // A teacher can't invigilate two different blocks at the same time
+    const alreadyInThisExam = exam.blocks.some(b =>
+      b.invigilator?.toString() === invigilatorId && b.number !== parseInt(blockNumber)
+    );
+    const clashingExams = await Exam.find({
+      _id: { $ne: exam._id },
+      date: exam.date,
+      blocks: { $elemMatch: { invigilator: invigilatorId, number: { $ne: parseInt(blockNumber) } } }
+    }).select('subject startTime endTime');
+    const clash = clashingExams.find(other =>
+      timesOverlap(other.startTime, other.endTime, exam.startTime, exam.endTime)
+    );
+
+    if (alreadyInThisExam || clash) {
+      return res.status(400).json({
+        message: clash
+          ? `Teacher is already invigilating ${clash.subject} (${clash.startTime} - ${clash.endTime}) at this time`
+          : 'Teacher is already assigned to another block in this exam'
+      });
     }
 
     // Find or create the block
@@ -482,7 +507,7 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
 
     // Get all teachers and exams in parallel with optimized queries
     const [teachers, sameDayExams] = await Promise.all([
-      User.find({ role: 'teacher' }).select('_id name email'),
+      User.find({ role: 'teacher', active: { $ne: false } }).select('_id name email'),
       Exam.find({
         date: exam.date,
         _id: { $ne: exam._id }
@@ -497,6 +522,12 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     const blockAllocations = new Map<string, mongoose.Types.ObjectId>();
     const teacherTimeSlots = new Map<string, Set<string>>();
     const timeSlotTeachers = new Map<string, Set<string>>();
+    // Teachers busy in an exam that overlaps with this one -> block numbers they are in
+    const busyTeachers = new Map<string, Set<string>>();
+    // Blocks that already had an invigilator before this run (no need to notify again)
+    const previouslyAllocatedBlocks = new Set(
+      exam.blocks.filter(block => block.invigilator).map(block => block.number)
+    );
 
     // Initialize workload map and time slots
     teachers.forEach(teacher => {
@@ -507,6 +538,7 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     // Process same day exams once
     sameDayExams.forEach(sameDayExam => {
       const timeSlot = `${sameDayExam.startTime}-${sameDayExam.endTime}`;
+      const overlaps = timesOverlap(sameDayExam.startTime, sameDayExam.endTime, exam.startTime, exam.endTime);
       
       // Track teachers assigned to each time slot
       if (!timeSlotTeachers.has(timeSlot)) {
@@ -526,6 +558,18 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
           }
           teacherBlockAssignments.get(teacherId)?.add(blockNumber);
           teacherTimeSlots.get(teacherId)?.add(timeSlot);
+
+          // Count duties already given to this teacher on the same day
+          if (teacherWorkload.has(teacherId)) {
+            teacherWorkload.set(teacherId, (teacherWorkload.get(teacherId) || 0) + 1);
+          }
+
+          if (overlaps) {
+            if (!busyTeachers.has(teacherId)) {
+              busyTeachers.set(teacherId, new Set());
+            }
+            busyTeachers.get(teacherId)?.add(blockNumber);
+          }
         }
       });
     });
@@ -539,9 +583,7 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     
     // Create a list of available teachers for shuffling
     const availableTeachersForShuffle = teachers.filter(teacher => {
-      const teacherId = teacher._id.toString();
-      const teacherSlots = teacherTimeSlots.get(teacherId) || new Set();
-      return !teacherSlots.has(currentTimeSlot);
+      return !busyTeachers.has(teacher._id.toString());
     });
 
     // Shuffle the available teachers
@@ -550,9 +592,20 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     for (const block of unallocatedBlocks) {
       const blockNumber = block.number.toString();
       
+      // Keep the same invigilator for a block (room) across the day when possible
       if (blockAllocations.has(blockNumber)) {
-        block.invigilator = blockAllocations.get(blockNumber);
-        continue;
+        const previousInvigilator = blockAllocations.get(blockNumber)!;
+        const previousId = previousInvigilator.toString();
+        const busyIn = busyTeachers.get(previousId);
+        const isFree = !busyIn || (busyIn.size === 1 && busyIn.has(blockNumber));
+        const alreadyInExam = exam.blocks.some(b => b.invigilator?.toString() === previousId);
+
+        if (teacherWorkload.has(previousId) && isFree && !alreadyInExam) {
+          block.invigilator = previousInvigilator;
+          teacherTimeSlots.get(previousId)?.add(currentTimeSlot);
+          teacherWorkload.set(previousId, (teacherWorkload.get(previousId) || 0) + 1);
+          continue;
+        }
       }
 
       // Find available teachers with optimized filtering
@@ -624,7 +677,7 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     // Create notifications in batch
     const notificationData = [];
     for (const block of exam.blocks) {
-      if (block.invigilator) {
+      if (block.invigilator && !previouslyAllocatedBlocks.has(block.number)) {
         const teacher = teachers.find(t => t._id.toString() === block.invigilator.toString());
         if (teacher) {
           notificationData.push({
@@ -639,7 +692,9 @@ export const autoAllocateTeachers = async (req: Request, res: Response) => {
     }
 
     // Create all notifications at once
-    await Notification.insertMany(notificationData);
+    if (notificationData.length > 0) {
+      await Notification.insertMany(notificationData);
+    }
 
     const updatedExam = await Exam.findById(id)
       .populate('blocks.invigilator', 'name email');

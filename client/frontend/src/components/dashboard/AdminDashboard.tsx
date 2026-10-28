@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
 import {
   Users, 
   BarChart2, 
@@ -77,6 +78,7 @@ import {  useRef } from "react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -254,7 +256,7 @@ export default function AdminDashboard() {
                   <Settings size={24} />
                 </button>
                 <button 
-                  onClick={() => navigate('/admin/login')}
+                  onClick={() => { logout(); navigate('/admin/login'); }}
                   className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Log out</span>
                   <LogOut size={24} />
@@ -312,7 +314,7 @@ export default function AdminDashboard() {
                     Search
                   </button>
                   <button
-                    onClick={() => navigate('/admin/login')}
+                    onClick={() => { logout(); navigate('/admin/login'); }}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
                     Sign out

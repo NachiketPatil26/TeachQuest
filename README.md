@@ -31,7 +31,7 @@ Before you begin, ensure you have the following installed:
 1. Clone the repository:
 ```bash
 git clone https://github.com/NachiketPatil26/TeachQuest.git
-cd teachquest
+cd TeachQuest
 ```
 
 2. Install dependencies for all components:
@@ -49,14 +49,13 @@ This will install dependencies for:
 1. Create a `.env` file in the server directory:
 ```bash
 cd server
-cp .env
+cp .env.example .env
 ```
 
 2. Update the `.env` file with your configuration:
 ```env
 # MongoDB Connection
-MONGODB_URI=mongodb+srv://nachiketpa26:3PDgmectZZP3U5Yg@cluster1.yrefb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1
-
+MONGODB_URI=your_mongodb_connection_string
 
 # Server Configuration
 PORT=5000
@@ -67,11 +66,18 @@ CLIENT_URL=http://localhost:5173
 
 # JWT Secret
 # Change this to a strong, random string in production
-JWT_SECRET=teachquest_secure_jwt_secret_key_2024
+JWT_SECRET=your_jwt_secret
 
 ```
 
 (For Chatbot API key, contact the repo owner or moderators)
+
+3. Create the first admin account:
+```bash
+cd server
+npm run seed:admin
+```
+Admins can then add teachers from the dashboard.
 
 
 ## Running the Application
@@ -94,10 +100,34 @@ This will start:
 npm run build
 ```
 
-2. Start the backend server:
+2. Build and start the backend server:
 ```bash
+cd server
+npm run build
 npm start
 ```
+
+## Deployment
+
+### Backend (Render)
+
+The repo includes a `render.yaml`, so the backend can be deployed as a Blueprint on Render (or create a Web Service manually):
+
+- **Root directory:** `server`
+- **Build command:** `npm ci --include=dev && npm run build`
+- **Start command:** `npm start`
+- **Health check path:** `/api/health`
+- **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL` (your Vercel URL), `GROQ_API_KEY`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`
+
+If you use MongoDB Atlas, allow access from Render under Network Access.
+
+### Frontend (Vercel)
+
+- **Root directory:** `client/frontend`
+- **Framework preset:** Vite
+- **Environment variable:** `VITE_API_URL` = your Render backend URL (e.g. `https://teachquest-api.onrender.com`)
+
+`vercel.json` takes care of routing so pages like `/admin/dashboard` work on refresh.
 
 ## Project Structure
 
@@ -109,10 +139,6 @@ teachquest/
 ├── package.json          # Root package.json for managing both applications
 └── README.md            # This file
 ```
-
-## API Documentation
-
-The API documentation is available at `/api-docs` when running the server in development mode.
 
 ## Contributing
 

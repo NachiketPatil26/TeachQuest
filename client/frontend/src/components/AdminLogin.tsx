@@ -17,6 +17,7 @@ export default function AdminLogin() {
     password: ''
   });
   const [errors, setErrors] = useState<Partial<LoginFormData>>({});
+  const [loginError, setLoginError] = useState('');
 
   const validateForm = () => {
     const newErrors: Partial<LoginFormData> = {};
@@ -39,12 +40,13 @@ export default function AdminLogin() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
     if (validateForm()) {
-      try {
-        await login({ ...formData, role: 'admin' });
+      const result = await login({ ...formData, role: 'admin' });
+      if (result.success) {
         navigate('/admin/dashboard');
-      } catch (error) {
-        console.error('Login failed:', error);
+      } else {
+        setLoginError(result.error || 'Login failed');
       }
     }
   };
@@ -120,6 +122,10 @@ export default function AdminLogin() {
               <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
+
+          {loginError && (
+            <p className="text-red-500 text-sm text-center">{loginError}</p>
+          )}
 
           <button
             type="submit"
