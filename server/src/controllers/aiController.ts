@@ -258,6 +258,12 @@ const callLocalModel = async (input: string): Promise<string> => {
  */
 const executeAction = async (parsedResponse: any, user: any) => {
   const { intent, entities, message } = parsedResponse;
+
+  // Only admins are allowed to modify exam data through the assistant
+  const adminIntents = ['createExam', 'autoAllocateTeachers', 'addBlock', 'updateExam'];
+  if (adminIntents.includes(intent) && user?.role !== 'admin') {
+    throw new Error('Only admins can make changes to exams');
+  }
   
   switch (intent) {
     case 'createExam':

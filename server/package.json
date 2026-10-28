@@ -2,10 +2,12 @@
   "name": "teachquest-server",
   "version": "1.0.0",
   "description": "Backend server for TeachQuest exam management system",
-  "main": "src/index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "ts-node src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
     "dev": "nodemon --exec ts-node src/server.ts",
+    "seed:admin": "ts-node src/Seedscripts/seedAdmin.ts",
     "test": "jest"
   },
   "dependencies": {
@@ -32,5 +34,8 @@
     "supertest": "^6.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

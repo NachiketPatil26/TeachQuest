@@ -114,7 +114,7 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, className = 
 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -290,7 +290,7 @@ export default function TeacherDashboard() {
                   <Search size={24} />
                 </button>
                 <button 
-                  onClick={() => navigate('/teacher/login')}
+                  onClick={() => { logout(); navigate('/teacher/login'); }}
                   className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Log out</span>
                   <LogOut size={24} />
@@ -348,7 +348,7 @@ export default function TeacherDashboard() {
                     Search
                   </button>
                   <button
-                    onClick={() => navigate('/teacher/login')}
+                    onClick={() => { logout(); navigate('/teacher/login'); }}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
                     Sign out

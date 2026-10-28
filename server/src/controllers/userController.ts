@@ -1,10 +1,22 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import * as jwt from 'jsonwebtoken';
 import User from '../models/User';
 import Exam from '../models/Exam';
 
+// Resolve ":id" route params, where "me" refers to the logged-in user
+const resolveTeacherId = (req: Request) => {
+  const { id } = req.params;
+  return id && id !== 'me' ? id : req.user?.id;
+};
+
+// Teachers may only modify their own data, admins can modify anyone's
+const canModifyTeacher = (req: Request, teacherId: string) => {
+  return req.user?.role === 'admin' || req.user?.id === teacherId;
+};
+
 const generateToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret', {
+  return jwt.sign({ id }, process.env.JWT_SECRET as string, {
     expiresIn: '30d',
   });
 };
@@ -12,14 +24,16 @@ const generateToken = (id: string) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     console.log('Login attempt:', { email: req.body.email });
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       console.warn('Login failed: Missing credentials');
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    const user = await User.findOne({ email });
+    // Emails are matched case-insensitively
+    const user = await User.findOne({ email: String(email).trim() })
+      .collation({ locale: 'en', strength: 2 });
 
     if (!user) {
       console.warn(`Login failed: No user found with email ${email}`);
@@ -32,12 +46,21 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (role && user.role !== role) {
+      console.warn(`Login failed: ${email} is not a ${role}`);
+      return res.status(403).json({ message: `This account does not have ${role} access` });
+    }
+
+    if (user.active === false) {
+      return res.status(403).json({ message: 'This account has been deactivated' });
+    }
+
     console.log(`Login successful: ${email}`);
     const token = generateToken(user._id);
       
       // Add token to user's tokens array
-      user.tokens = user.tokens || [];
-      user.tokens.push({ token });
+      // Add token to user's tokens array (keep only the most recent sessions)
+      user.tokens = [...(user.tokens || []), { token }].slice(-5);
       await user.save();
 
       res.json({
@@ -62,7 +85,8 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, phone, branch, department, subjects } = req.body;
+    const { name, password, role, phone, branch, department, subjects } = req.body;
+    const email = req.body.email?.toLowerCase().trim();
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -125,7 +149,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
 
     if (user) {
       user.name = req.body.name || user.name;
-      user.email = req.body.email || user.email;
+      user.email = req.body.email ? req.body.email.toLowerCase().trim() : user.email;
       user.phone = req.body.phone || user.phone;
       
       if (user.role === 'teacher') {
@@ -203,7 +227,7 @@ export const getTeachers = async (req: Request, res: Response) => {
 
 export const getTeacherAllocations = async (req: Request, res: Response) => {
   try {
-    const teacherId = req.params.id || req.user?.id;
+    const teacherId = resolveTeacherId(req);
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
@@ -224,7 +248,6 @@ export const getTeacherAllocations = async (req: Request, res: Response) => {
       date: { $gte: new Date() } // Only fetch upcoming and current exams
     })
     .populate('blocks.invigilator', 'name email')
-    .populate('subject')
     .sort({ date: 1, startTime: 1 });
     
     if (!exams) {
@@ -252,10 +275,14 @@ export const getTeacherAllocations = async (req: Request, res: Response) => {
 // Update teacher expertise levels
 export const updateTeacherExpertise = async (req: Request, res: Response) => {
   try {
-    const teacherId = req.params.id || req.user?.id;
+    const teacherId = resolveTeacherId(req);
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    if (!canModifyTeacher(req, teacherId)) {
+      return res.status(403).json({ message: 'Not authorized to update this teacher' });
     }
     
     const { subjectExpertise } = req.body;
@@ -303,10 +330,14 @@ export const updateTeacherExpertise = async (req: Request, res: Response) => {
 // Update teacher preferences
 export const updateTeacherPreferences = async (req: Request, res: Response) => {
   try {
-    const teacherId = req.params.id || req.user?.id;
+    const teacherId = resolveTeacherId(req);
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    if (!canModifyTeacher(req, teacherId)) {
+      return res.status(403).json({ message: 'Not authorized to update this teacher' });
     }
     
     const { subjectPreferences, timePreferences } = req.body;
@@ -469,6 +500,17 @@ export const deleteTeacher = async (req: Request, res: Response) => {
     
     // Delete the teacher
     await User.findByIdAndDelete(teacherId);
+
+    // Remove the teacher from any exams they were allocated to
+    await Exam.updateMany(
+      { allocatedTeachers: teacherId },
+      { $pull: { allocatedTeachers: teacherId } }
+    );
+    await Exam.updateMany(
+      { 'blocks.invigilator': teacherId },
+      { $unset: { 'blocks.$[block].invigilator': '' } },
+      { arrayFilters: [{ 'block.invigilator': new mongoose.Types.ObjectId(teacherId) }] }
+    );
     
     res.json({ message: 'Teacher deleted successfully' });
   } catch (error: any) {
@@ -484,7 +526,7 @@ export const deleteTeacher = async (req: Request, res: Response) => {
 // Get teacher statistics
 export const getTeacherStats = async (req: Request, res: Response) => {
   try {
-    const teacherId = req.params.id || req.user?.id;
+    const teacherId = resolveTeacherId(req);
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
@@ -572,12 +614,12 @@ export const updateTeacher = async (req: Request, res: Response) => {
     
     // Update basic teacher information
     if (req.body.name) user.name = req.body.name;
-    if (req.body.email) user.email = req.body.email;
+    if (req.body.email) user.email = req.body.email.toLowerCase().trim();
     if (req.body.phone) user.phone = req.body.phone;
     if (req.body.branch) user.branch = req.body.branch;
     if (req.body.department) user.department = req.body.department;
     if (req.body.subjects) user.subjects = req.body.subjects;
-    if (req.body.remuneration) user.remuneration = req.body.remuneration;
+    if (req.body.remuneration !== undefined) user.remuneration = req.body.remuneration;
     
     const updatedUser = await user.save();
     
@@ -603,7 +645,7 @@ export const updateTeacher = async (req: Request, res: Response) => {
 // Get teacher upcoming duties
 export const getTeacherUpcomingDuties = async (req: Request, res: Response) => {
   try {
-    const teacherId = req.params.id || req.user?.id;
+    const teacherId = resolveTeacherId(req);
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });

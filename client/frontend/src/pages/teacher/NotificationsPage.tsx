@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, Clock, Calendar } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../services/api';
 
 interface Notification {
   _id: string;
@@ -26,12 +27,8 @@ const NotificationsPage: React.FC = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await fetch(`/api/notifications/${user?.id}`);
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to fetch notifications');
-        }
-        setNotifications(data);
+        const response = await api.get('/api/notifications');
+        setNotifications(response.data);
       } catch (err) {
         setError('Failed to load notifications');
         console.error('Error fetching notifications:', err);
@@ -47,16 +44,7 @@ const NotificationsPage: React.FC = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/notifications/${notificationId}/read`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to mark notification as read');
-      }
+      await api.put(`/api/notifications/${notificationId}/read`);
 
       setNotifications(prevNotifications =>
         prevNotifications.map(notification =>

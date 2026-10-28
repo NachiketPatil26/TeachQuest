@@ -9,8 +9,11 @@ const seedAdmin = async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/teachquest');
     console.log('Connected to MongoDB');
 
+    const email = (process.env.ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
+    const password = process.env.ADMIN_PASSWORD || 'admin123';
+
     // Check if admin already exists
-    const adminExists = await User.findOne({ email: 'admin@gmail.com' });
+    const adminExists = await User.findOne({ email });
     if (adminExists) {
       console.log('Admin user already exists');
       process.exit(0);
@@ -18,9 +21,9 @@ const seedAdmin = async () => {
 
     // Create admin user
     const admin = await User.create({
-      name: 'Test Admin',
-      email: 'admin@gmail.com',
-      password: 'admin123',
+      name: process.env.ADMIN_NAME || 'Test Admin',
+      email,
+      password,
       role: 'admin',
       phone: '1234567890'
     });
