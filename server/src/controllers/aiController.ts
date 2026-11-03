@@ -47,9 +47,24 @@ For general chat interactions, use this structure:
 }
 
 
+Rules for entities:
+- "branch" is the department, e.g. "Computer Science". Always include it when the user mentions it.
+- "examName" is the type of exam, e.g. "IA1", "IA2", "ESE". Never put these in "subject".
+- "subject" is the course, e.g. "DBMS", "Maths IV", "OS".
+- "semester" is a number from 1 to 8.
+- Only include entities the user actually mentioned. Do not invent values.
+
 Remember to always respond in a friendly and helpful manner. If you don't understand a request, politely ask for more details or clarify your question.
 Always provide a response, even for simple greetings or questions.
 `;
+
+// Thrown when the user's request is missing details we need to ask for
+class MissingInfoError extends Error {}
+
+const ENTITY_KEYS = ['subject', 'semester', 'branch', 'examName', 'date', 'startTime', 'endTime', 'blockNumber', 'blockCapacity', 'blockLocation'];
+
+// Escape user/model provided text before using it in a regex
+const escapeRegex = (text: string) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // Path to the Deepseek R1 model script
 const MODEL_SCRIPT_PATH = path.join(__dirname, '../../scripts/run_deepseek.py');
@@ -120,6 +135,11 @@ export const processAiRequest = async (req: Request, res: Response) => {
     });
     
   } catch (error) {
+    // Missing details: ask the user instead of failing
+    if (error instanceof MissingInfoError) {
+      return res.json({ message: error.message, result: { message: error.message }, intent: 'chat' });
+    }
+
     console.error('AI processing error:', error);
     const processingTime = Date.now() - startTime;
     console.log(`AI request failed in ${processingTime}ms`);
@@ -257,7 +277,15 @@ const callLocalModel = async (input: string): Promise<string> => {
  * Execute the appropriate action based on the parsed intent and entities
  */
 const executeAction = async (parsedResponse: any, user: any) => {
-  const { intent, entities, message } = parsedResponse;
+  const { intent, message } = parsedResponse;
+
+  // The model sometimes puts entities at the top level instead of inside "entities"
+  const entities: any = { ...(parsedResponse.entities || {}) };
+  ENTITY_KEYS.forEach(key => {
+    if (entities[key] === undefined && parsedResponse[key] !== undefined) {
+      entities[key] = parsedResponse[key];
+    }
+  });
 
   // Only admins are allowed to modify exam data through the assistant
   const adminIntents = ['createExam', 'autoAllocateTeachers', 'addBlock', 'updateExam'];
@@ -300,7 +328,7 @@ const createExam = async (entities: any, user: any) => {
   
   // Validate required fields
   if (!subject || !semester || !branch || !examName || !date || !startTime || !endTime) {
-    throw new Error('Missing required fields for creating an exam');
+    throw new MissingInfoError('To create an exam I need the branch, semester, exam name, subject, date, start time and end time.');
   }
 
   // Process natural language date input
@@ -364,12 +392,12 @@ const getExams = async (entities: any) => {
   const { branch, semester, examName } = entities;
   
   if (!branch) {
-    throw new Error('Branch is required to fetch exams');
+    throw new MissingInfoError('Which branch should I look in? For example: "Show IA2 exams for Computer Science semester 4".');
   }
   
   // Build query object with case-insensitive branch name
   const query: any = { 
-    branch: new RegExp(branch, 'i')  // Case insensitive search
+    branch: new RegExp(escapeRegex(branch), 'i')  // Case insensitive search
   };
   
   // Add semester to query if provided 
@@ -379,7 +407,7 @@ const getExams = async (entities: any) => {
   
   // Add examName to query if provided (case insensitive)
   if (examName) {
-    query.examName = new RegExp(examName, 'i');
+    query.examName = new RegExp(escapeRegex(examName), 'i');
   }
 
   console.log('Debug: Query parameters:', query);
@@ -509,7 +537,7 @@ const addBlock = async (entities: any) => {
   
   // Validate block data
   if (!blockNumber || !blockCapacity || !blockLocation) {
-    throw new Error('Block number, capacity, and location are required');
+    throw new MissingInfoError('To add a block I need the block number, capacity and location.');
   }
   
   // Call the existing add block function
