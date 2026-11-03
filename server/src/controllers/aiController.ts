@@ -5,7 +5,7 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 import Exam from '../models/Exam';
 import User from '../models/User';
-import GroqService from '../services/groqService';
+import OpenRouterService from '../services/openRouterService';
 
 // Define the system prompt template
 const SYSTEM_PROMPT = `
@@ -55,7 +55,7 @@ Always provide a response, even for simple greetings or questions.
 const MODEL_SCRIPT_PATH = path.join(__dirname, '../../scripts/run_deepseek.py');
 
 /**
- * Process a request using the Groq API
+ * Process a request using the OpenRouter API
  */
 export const processAiRequest = async (req: Request, res: Response) => {
   const startTime = Date.now();
@@ -71,13 +71,13 @@ export const processAiRequest = async (req: Request, res: Response) => {
     
     console.log(`Processing AI request [${normalizedInput.substring(0, 30)}...]`);
     
-    if (!process.env.GROQ_API_KEY) {
-      throw new Error('Groq API key is not configured');
+    if (!process.env.OPENROUTER_API_KEY) {
+      throw new Error('OpenRouter API key is not configured');
     }
 
-    // Use Groq service
-    const groqService = GroqService.getInstance();
-    const result = await groqService.generateResponse(SYSTEM_PROMPT, normalizedInput);
+    // Use OpenRouter service
+    const openRouterService = OpenRouterService.getInstance();
+    const result = await openRouterService.generateResponse(SYSTEM_PROMPT, normalizedInput);
     
     // Check if response is JSON (starts with {) or plain text
     let parsedResponse;

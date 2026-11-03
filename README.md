@@ -117,7 +117,7 @@ The repo includes a `render.yaml`, so the backend can be deployed as a Blueprint
 - **Build command:** `npm ci --include=dev && npm run build`
 - **Start command:** `npm start`
 - **Health check path:** `/api/health`
-- **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL` (your Vercel URL), `GROQ_API_KEY`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`
+- **Environment variables:** `MONGODB_URI`, `JWT_SECRET`, `CLIENT_URL` (your Vercel URL), `OPENROUTER_API_KEY`, `EMAIL_USER`, `EMAIL_PASSWORD`, `EMAIL_FROM`
 
 If you use MongoDB Atlas, allow access from Render under Network Access.
 

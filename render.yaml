@@ -17,8 +17,10 @@ services:
         generateValue: true
       - key: CLIENT_URL
         sync: false
-      - key: GROQ_API_KEY
+      - key: OPENROUTER_API_KEY
         sync: false
+      - key: OPENROUTER_MODEL
+        value: meta-llama/llama-3.3-70b-instruct
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASSWORD
