@@ -2,6 +2,8 @@
 
 TeachQuest is a comprehensive exam management system designed for educational institutions. It helps manage exam schedules, teacher allocations, and block assignments efficiently.
 
+Live: https://tq.nachiketpatil.me · Architecture and design decisions: [ARCHITECTURE.md](ARCHITECTURE.md)
+
 ## Features
 
 - **Teacher Management**

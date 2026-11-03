@@ -103,7 +103,7 @@ export default function TeacherDutyDetails() {
     );
   }
 
-  const block = duty.blocks?.find(b => b.invigilator._id === user?.id);
+  const block = duty.blocks?.find(b => b.invigilator?._id === user?.id);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">

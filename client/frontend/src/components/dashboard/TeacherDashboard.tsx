@@ -6,7 +6,6 @@ import {
   // ClipboardList,
   // DollarSign,
   Bell,
-  Search,
   LogOut,
   Menu,
   X,
@@ -16,7 +15,9 @@ import {
 } from 'lucide-react';
 import LogoTeacherDashboard from '../../assets/TeachQuestLogo.png';
 import TeacherDashboardImage from '../../assets/Teacher-pana.png';
-import { getTeacherStats, getTeacherUpcomingDuties } from '../../services/api';
+import api, { getTeacherStats, getTeacherUpcomingDuties } from '../../services/api';
+import AccountModal from '../common/AccountModal';
+import NavSearch from '../common/NavSearch';
 
 interface TeacherStats {
   upcomingDuties: number;
@@ -36,7 +37,7 @@ interface Block {
   capacity: number;
   location: string;
   _id: string;
-  invigilator: Invigilator;
+  invigilator: Invigilator | null;
 }
 
 interface UpcomingDuty {
@@ -115,6 +116,15 @@ const StatsCard: React.FC<StatsCardProps> = ({ title, value, trend, className = 
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [showAccount, setShowAccount] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Unread notification count for the bell badge
+  useEffect(() => {
+    api.get('/api/notifications')
+      .then(response => setUnreadCount(response.data.filter((n: { read: boolean }) => !n.read).length))
+      .catch(() => setUnreadCount(0));
+  }, []);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -136,7 +146,7 @@ export default function TeacherDashboard() {
         upcomingDuties: teacherStats.upcomingDuties || 0,
         completedDuties: teacherStats.completedDuties || 0,
         pendingReports: teacherStats.pendingReports || 0,
-        totalDuties: teacherStats.totalDuties || 0
+        totalDuties: teacherStats.totalAllocations || 0
       });
       
       // Fetch upcoming duties (limit to 5 for dashboard)
@@ -161,7 +171,7 @@ export default function TeacherDashboard() {
         subject: duty.subject,
         date: duty.date,
         blocks: duty.blocks,
-        assignedBlock: duty.blocks?.find((b: Block) => b.invigilator._id === user?.id)
+        assignedBlock: duty.blocks?.find((b: Block) => b.invigilator?._id === user?.id)
       })));
       
       // Map and validate the duties data
@@ -172,11 +182,11 @@ export default function TeacherDashboard() {
           capacity: block.capacity,
           location: block.location,
           _id: block._id,
-          invigilator: {
+          invigilator: block.invigilator ? {
             _id: block.invigilator._id,
             name: block.invigilator.name,
             email: block.invigilator.email
-          }
+          } : null
         })) : [];
 
         return {
@@ -265,13 +275,13 @@ export default function TeacherDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
+              <button onClick={() => navigate('/')} className="flex-shrink-0">
                 <img className="h-8 w-8" src={LogoTeacherDashboard} alt="Logo" />
-              </div>
+              </button>
               <div className="hidden md:block">
                 <div className="ml-10 flex items-baseline space-x-4">
                   <button onClick={() => navigate('/teacher/dashboard')} className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</button>
-                  <button onClick={() => navigate('/teacher/profile')} className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Profile</button>
+                  <button onClick={() => setShowAccount(true)} className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Profile</button>
                 </div>
               </div>
             </div>
@@ -279,16 +289,16 @@ export default function TeacherDashboard() {
               <div className="ml-4 flex items-center md:ml-6">
                 <button 
                   onClick={() => navigate('/teacher/notifications')}
-                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]">
+                  className="relative bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]">
                   <span className="sr-only">View notifications</span>
                   <Bell size={24} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </button>
-                <button 
-                  onClick={() => navigate('/teacher/search')}
-                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
-                  <span className="sr-only">Search</span>
-                  <Search size={24} />
-                </button>
+                <NavSearch placeholder="Search your duties by subject" onSearch={(query) => navigate(`/teacher/duties?q=${encodeURIComponent(query)}`)} />
                 <button 
                   onClick={() => { logout(); navigate('/teacher/login'); }}
                   className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
@@ -318,7 +328,7 @@ export default function TeacherDashboard() {
                   Dashboard
                 </button>
                 <button
-                  onClick={() => navigate('/teacher/profile')}
+                  onClick={() => { setIsMobileMenuOpen(false); setShowAccount(true); }}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                 >
                   Profile
@@ -326,12 +336,12 @@ export default function TeacherDashboard() {
               </div>
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="flex items-center px-5">
-                  <div className="flex-shrink-0">
-                    <img className="h-10 w-10 rounded-full" src="/teacher-avatar.png" alt="Teacher" />
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#9FC0AE] text-white flex items-center justify-center font-medium">
+                    {user?.name?.charAt(0).toUpperCase() || 'T'}
                   </div>
                   <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">Teacher Name</div>
-                    <div className="text-sm font-medium text-gray-500">teacher@example.com</div>
+                    <div className="text-base font-medium text-gray-800">{user?.name || 'Teacher'}</div>
+                    <div className="text-sm font-medium text-gray-500">Teacher</div>
                   </div>
                 </div>
                 <div className="mt-3 px-2 space-y-1">
@@ -339,13 +349,13 @@ export default function TeacherDashboard() {
                     onClick={() => navigate('/teacher/notifications')}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
-                    Notifications
+                    Notifications{unreadCount > 0 ? ` (${unreadCount})` : ''}
                   </button>
                   <button
-                    onClick={() => navigate('/teacher/search')}
+                    onClick={() => navigate('/teacher/duties')}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
-                    Search
+                    My Duties
                   </button>
                   <button
                     onClick={() => { logout(); navigate('/teacher/login'); }}
@@ -359,6 +369,8 @@ export default function TeacherDashboard() {
           )}
         </div>
       </nav>
+
+      <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
@@ -499,7 +511,7 @@ export default function TeacherDashboard() {
                 ) : (
                   upcomingDuties.map((duty) => {
                     // Find the block assigned to the current teacher
-                    const block = duty.blocks?.find((b: Block) => b.invigilator._id === user?.id);
+                    const block = duty.blocks?.find((b: Block) => b.invigilator?._id === user?.id);
                     const room = block?.location || 'Not assigned';
                     const blockNumber = block?.number || 'N/A';
                       
@@ -592,7 +604,7 @@ export default function TeacherDashboard() {
                     </p>
                     <p className="text-sm text-gray-600 mt-1">
                       {(() => {
-                        const block = upcomingDuties[0].blocks?.find((b: Block) => b.invigilator._id === user?.id);
+                        const block = upcomingDuties[0].blocks?.find((b: Block) => b.invigilator?._id === user?.id);
                         return block 
                           ? `Block ${block.number} - Room: ${block.location}`
                           : 'Not assigned';

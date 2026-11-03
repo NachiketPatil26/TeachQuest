@@ -17,6 +17,7 @@ interface ApiError {
   response?: {
     data?: {
       message?: string;
+      error?: string;
     };
   };
 }
@@ -311,6 +312,16 @@ const AiAssistant: React.FC = () => {
     e.preventDefault();
     if (!input.trim() || isProcessing) return;
 
+    // The assistant needs a logged in user
+    if (!localStorage.getItem('token')) {
+      setMessages(prev => [...prev,
+        { id: Date.now().toString(), text: input.trim(), sender: 'user', timestamp: new Date() },
+        { id: (Date.now() + 1).toString(), text: 'Please log in as an admin or teacher to use the assistant.', sender: 'ai', timestamp: new Date() }
+      ]);
+      setInput('');
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
@@ -376,7 +387,10 @@ const AiAssistant: React.FC = () => {
       let errorMessage = 'Sorry, I encountered an error processing your request.';
       
       const apiError = error as ApiError;
-      if (apiError.response?.data?.message) {
+      if (apiError.response?.data?.error) {
+        // Server sends the specific reason in "error" (e.g. admin-only actions)
+        errorMessage = apiError.response.data.error;
+      } else if (apiError.response?.data?.message) {
         errorMessage = apiError.response.data.message;
       } else if (error instanceof DOMException && error.name === 'AbortError') {
         errorMessage = 'Request timed out. The AI service is taking longer than expected to respond.';

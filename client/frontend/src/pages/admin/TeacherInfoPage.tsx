@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Edit, Trash2, Plus, X, Search, Download } from 'lucide-react';
 import { getTeachers, getTeacherAllocations, createTeacher, updateTeacher, deleteTeacher } from '../../services/api';
 import api from '../../services/api';
@@ -46,7 +46,8 @@ export default function TeacherInfoPage() {
   const [teachers, setTeachers] = useState<TeacherWithAllocations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
   
   // Modal states
   const [showModal, setShowModal] = useState(false);

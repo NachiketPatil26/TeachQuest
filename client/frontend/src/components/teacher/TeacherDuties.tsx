@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, MapPin } from 'lucide-react';
 import { getTeacherUpcomingDuties } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -35,6 +35,8 @@ export default function TeacherDuties() {
   const [duties, setDuties] = useState<Duty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q')?.toLowerCase() || '';
 
   useEffect(() => {
     const fetchDuties = async () => {
@@ -51,6 +53,12 @@ export default function TeacherDuties() {
 
     fetchDuties();
   }, []);
+
+  const filteredDuties = query
+    ? duties.filter(duty =>
+        duty.subject.toLowerCase().includes(query) ||
+        (duty.examName || '').toLowerCase().includes(query))
+    : duties;
 
   if (loading) {
     return (
@@ -107,12 +115,19 @@ export default function TeacherDuties() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">My Duties</h1>
 
-          {duties.length === 0 ? (
+          {query && (
+            <div className="flex items-center justify-between mb-4 px-3 py-2 bg-gray-50 rounded-md text-sm">
+              <span className="text-gray-600">Showing results for "<span className="font-medium">{searchParams.get('q')}</span>"</span>
+              <button onClick={() => setSearchParams({})} className="text-[#4A7C5F] hover:underline">Clear</button>
+            </div>
+          )}
+
+          {filteredDuties.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No duties found.</p>
           ) : (
             <div className="space-y-4">
-              {duties.map((duty) => {
-                const block = duty.blocks?.find(b => b.invigilator._id === user?.id);
+              {filteredDuties.map((duty) => {
+                const block = duty.blocks?.find(b => b.invigilator?._id === user?.id);
                 
                 return (
                   <div

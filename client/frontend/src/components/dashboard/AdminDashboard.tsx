@@ -7,13 +7,25 @@ import {
   Settings, 
   Calendar,
   Bell,
-  Search,
   LogOut,
   Menu,
   X
 } from 'lucide-react';
 import LogoAdminDashboard from '../../assets/TeachQuestLogo.png';
+import AccountModal from '../common/AccountModal';
+import NavSearch from '../common/NavSearch';
+import { getExams } from '../../services/api';
 import AdminDashboardImage from '../../assets/Online test-bro.png';
+interface PendingExam {
+  _id: string;
+  subject: string;
+  examName: string;
+  semester: number;
+  date: string;
+  startTime: string;
+  blocks?: { number: number; invigilator?: string | null }[];
+}
+
 // CardSkeleton Component
 function CardSkeleton() {
   return (
@@ -78,8 +90,12 @@ import {  useRef } from "react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [showAccount, setShowAccount] = useState(false);
+  const [showPending, setShowPending] = useState(false);
+  const [pendingLoading, setPendingLoading] = useState(false);
+  const [pendingExams, setPendingExams] = useState<PendingExam[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [branches, setBranches] = useState<string[]>([
@@ -91,6 +107,40 @@ export default function AdminDashboard() {
   const [newBranch, setNewBranch] = useState("");
 
   const [selectedBranch, setSelectedBranch] = useState<string>("Computer Science");
+
+  // Upcoming exams in the selected branch that still have blocks without an invigilator
+  const togglePending = async () => {
+    if (showPending) {
+      setShowPending(false);
+      return;
+    }
+    setShowPending(true);
+    setPendingLoading(true);
+    try {
+      const exams: PendingExam[] = await getExams(selectedBranch);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      setPendingExams(exams.filter(exam =>
+        new Date(exam.date) >= today &&
+        (!exam.blocks?.length || exam.blocks.some(block => !block.invigilator))
+      ));
+    } catch (error) {
+      console.error('Error fetching pending allocations:', error);
+      setPendingExams([]);
+    } finally {
+      setPendingLoading(false);
+    }
+  };
+
+  const openPendingExam = (exam: PendingExam) => {
+    const base = exam.blocks?.length ? 'allocation' : 'timetable';
+    setShowPending(false);
+    navigate(`/admin/${base}/${encodeURIComponent(selectedBranch)}/${exam.semester}/${encodeURIComponent(exam.examName)}`);
+  };
+
+  const searchTeachers = (query: string) => {
+    navigate(`/admin/teachers/${encodeURIComponent(selectedBranch)}?q=${encodeURIComponent(query)}`);
+  };
 
   // **Fix for input focus issue**
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -223,10 +273,10 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-          <div className="flex items-center space-x-2"> {/* Added flex and spacing */}
+          <button onClick={() => navigate('/')} className="flex items-center space-x-2"> {/* Added flex and spacing */}
           <img src={LogoAdminDashboard} className="h-8 w-8" alt="LogoAdminDashboard" />
           <h1 className="text-xl font-bold text-gray-800">TeachQuest</h1>
-       </div>
+       </button>
       <div className="hidden md:block">
         <div className="ml-10 flex items-baseline space-x-4">
           {/* <button onClick={() => navigate('/admin/dashboard')} className="text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</button> */}
@@ -238,19 +288,14 @@ export default function AdminDashboard() {
             <div className="hidden md:block">
               <div className="ml-4 flex items-center md:ml-6">
                 <button 
-                  onClick={() => navigate('/admin/notifications')}
+                  onClick={togglePending}
                   className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE]">
-                  <span className="sr-only">View notifications</span>
+                  <span className="sr-only">Pending allocations</span>
                   <Bell size={24} />
                 </button>
+                <NavSearch placeholder={`Search teachers in ${selectedBranch}`} onSearch={searchTeachers} />
                 <button 
-                  onClick={() => navigate('/admin/search')}
-                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
-                  <span className="sr-only">Search</span>
-                  <Search size={24} />
-                </button>
-                <button 
-                  onClick={() => navigate('/admin/settings')}
+                  onClick={() => setShowAccount(true)}
                   className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#9FC0AE] ml-3">
                   <span className="sr-only">Settings</span>
                   <Settings size={24} />
@@ -284,7 +329,7 @@ export default function AdminDashboard() {
                   Dashboard
                 </button>
                 <button
-                  onClick={() => navigate('/admin/settings')}
+                  onClick={() => { setIsMobileMenuOpen(false); setShowAccount(true); }}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                 >
                   Settings
@@ -292,26 +337,26 @@ export default function AdminDashboard() {
               </div>
               <div className="pt-4 pb-3 border-t border-gray-200">
                 <div className="flex items-center px-5">
-                  <div className="flex-shrink-0">
-                    <img className="h-10 w-10 rounded-full" src="/admin-avatar.png" alt="Admin" />
+                  <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#9FC0AE] text-white flex items-center justify-center font-medium">
+                    {user?.name?.charAt(0).toUpperCase() || 'A'}
                   </div>
                   <div className="ml-3">
-                    <div className="text-base font-medium text-gray-800">Admin User</div>
-                    <div className="text-sm font-medium text-gray-500">admin@example.com</div>
+                    <div className="text-base font-medium text-gray-800">{user?.name || 'Admin'}</div>
+                    <div className="text-sm font-medium text-gray-500">Administrator</div>
                   </div>
                 </div>
                 <div className="mt-3 px-2 space-y-1">
                   <button
-                    onClick={() => navigate('/admin/notifications')}
+                    onClick={() => { setIsMobileMenuOpen(false); togglePending(); }}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
-                    Notifications
+                    Pending Allocations
                   </button>
                   <button
-                    onClick={() => navigate('/admin/search')}
+                    onClick={() => navigate(`/admin/teachers/${encodeURIComponent(selectedBranch)}`)}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 w-full text-left"
                   >
-                    Search
+                    Search Teachers
                   </button>
                   <button
                     onClick={() => { logout(); navigate('/admin/login'); }}
@@ -325,6 +370,50 @@ export default function AdminDashboard() {
           )}
         </div>
       </nav>
+
+      {/* Pending allocations panel */}
+      {showPending && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowPending(false)} />
+          <div className="fixed top-16 right-4 sm:right-8 z-50 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200">
+            <div className="px-4 py-3 border-b">
+              <h3 className="text-sm font-semibold text-gray-900">Pending Allocations</h3>
+              <p className="text-xs text-gray-500">Upcoming {selectedBranch} exams with unassigned blocks</p>
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {pendingLoading ? (
+                <p className="px-4 py-6 text-sm text-gray-500 text-center">Loading...</p>
+              ) : pendingExams.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-gray-500 text-center">All upcoming exams are allocated 🎉</p>
+              ) : (
+                pendingExams.map(exam => {
+                  const unassigned = exam.blocks?.filter(block => !block.invigilator).length || 0;
+                  return (
+                    <button
+                      key={exam._id}
+                      onClick={() => openPendingExam(exam)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b last:border-b-0"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-900">{exam.subject}</span>
+                        <span className="text-xs text-gray-500">{new Date(exam.date).toLocaleDateString('en-GB')}</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {exam.examName} · Sem {exam.semester} · {exam.startTime}
+                      </div>
+                      <div className="text-xs text-amber-600 mt-0.5">
+                        {exam.blocks?.length ? `${unassigned} of ${exam.blocks.length} blocks unassigned` : 'No blocks added yet'}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      <AccountModal isOpen={showAccount} onClose={() => setShowAccount(false)} />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">

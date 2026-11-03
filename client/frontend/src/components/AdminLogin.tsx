@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import AdminLoginImage from '../assets/AdminLogin.png';
 interface LoginFormData {
   email: string;
@@ -9,7 +9,7 @@ interface LoginFormData {
 }
 
 export default function AdminLogin() {
-  const { login } = useAuth();
+  const { user, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<LoginFormData>({
@@ -65,6 +65,11 @@ export default function AdminLogin() {
       }));
     }
   };
+
+  // Already logged in -> go straight to the dashboard
+  if (!isLoading && user?.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#9FC0AE] flex items-center justify-center px-4">
