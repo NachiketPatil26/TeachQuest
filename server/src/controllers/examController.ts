@@ -103,7 +103,7 @@ export const getExams = async (req: Request, res: Response) => {
 
     // Add examName to query if provided
     if (examName) {
-      query.examName = examName;
+      query.examName = String(examName);
     }
 
     const exams = await Exam.find(query)

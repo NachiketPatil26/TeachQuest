@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import api from '../../services/api'; 
 import {  getExams  } from '../../services/api';
 import ExamDetailModal from '../timetable/ExamDetailModal';
@@ -257,18 +258,28 @@ export default function ExamTimetable(): React.ReactElement {
   const handleExportToExcel = async () => {
     try {
       setError('');
-      const response = await api.get(`/api/exams/${branch}/export`, {
-        responseType: 'blob'
-      });
-      
-      // Create a download link
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `exam-timetable-${branch}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      if (examSlots.length === 0) {
+        setError('No exam slots to export');
+        return;
+      }
+
+      // Build the timetable sheet from the loaded exam slots
+      const excelData = [...examSlots]
+        .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
+        .map(slot => ({
+          'Date': new Date(slot.date).toLocaleDateString('en-GB'),
+          'Day': new Date(slot.date).toLocaleDateString('en-GB', { weekday: 'long' }),
+          'Subject': slot.subject,
+          'Start Time': slot.startTime,
+          'End Time': slot.endTime,
+          'Blocks': slot.blocks?.map(block => block.number).join(', ') || '-'
+        }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      ws['!cols'] = [{ wch: 12 }, { wch: 12 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 25 }];
+      XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
+      XLSX.writeFile(wb, `exam-timetable-${branch}-sem${semester}-${examName}.xlsx`);
     } catch (err) {
       const errorMessage = (err as Error & { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to export timetable';
       setError(errorMessage);

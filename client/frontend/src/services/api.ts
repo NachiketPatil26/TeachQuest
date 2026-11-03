@@ -67,6 +67,22 @@ api.interceptors.request.use(
   }
 );
 
+// Session expired or revoked -> clear it and send the user back to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const isLoginRequest = error.config?.url?.includes('/api/users/login');
+    if (error.response?.status === 401 && !isLoginRequest && localStorage.getItem('token')) {
+      const storedUser = localStorage.getItem('user');
+      const role = storedUser ? JSON.parse(storedUser).role : 'teacher';
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      window.location.href = `/${role}/login`;
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Auth APIs
 export const login = async (email: string, password: string, role: 'admin' | 'teacher') => {
   try {
