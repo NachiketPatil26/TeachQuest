@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import * as dotenv from 'dotenv';
 
 import { connectDB } from './config/db';
@@ -31,7 +33,12 @@ const PORT = process.env.PORT || 5000;
 // Connect to MongoDB
 connectDB();
 
+// Render runs behind a proxy, needed for correct client IPs in rate limiting
+app.set('trust proxy', 1);
+
 // Middleware
+app.use(helmet());
+
 const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
   .split(',')
   .map(origin => origin.trim().replace(/\/$/, ''));
@@ -55,7 +62,27 @@ app.get('/api/health', (req: express.Request, res: express.Response) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api/ai', aiRoutes);
+// Limit repeated login attempts (brute force protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+  message: { message: 'Too many login attempts, please try again after 15 minutes' }
+});
+
+// Limit AI assistant usage (each request costs API credits)
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { message: 'Too many requests to the AI assistant, please slow down' }
+});
+
+app.use('/api/users/login', loginLimiter);
+app.use('/api/ai', aiLimiter, aiRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/branches', branchRoutes);

@@ -63,6 +63,14 @@ export function useAuth() {
   };
 
   const logout = () => {
+    // Invalidate the session on the server as well
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch(`${API_URL}/api/users/logout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     setUser(null);

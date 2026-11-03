@@ -1,6 +1,7 @@
 import * as express from 'express';
 import {
   loginUser,
+  logoutUser,
   registerUser,
   getUserProfile,
   updateUserProfile,
@@ -22,6 +23,9 @@ const router = express.Router();
 router.route('/login')
   .post(loginUser as unknown as express.RequestHandler);
 
+router.route('/logout')
+  .post(protect as unknown as express.RequestHandler, logoutUser as unknown as express.RequestHandler);
+
 // Only admins can register new users (the first admin is created via seedAdmin)
 router.route('/register')
   .post(protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler, registerUser as express.RequestHandler);
@@ -33,7 +37,7 @@ router.route('/profile')
 
 // Teacher routes
 router.route('/teachers')
-  .get(protect as unknown as express.RequestHandler, getTeachers as unknown as express.RequestHandler)
+  .get(protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler, getTeachers as unknown as express.RequestHandler)
   .post(protect as unknown as express.RequestHandler, adminOnly as unknown as express.RequestHandler, createTeacher as unknown as express.RequestHandler);
 
 // Update teacher route

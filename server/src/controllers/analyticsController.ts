@@ -231,7 +231,7 @@ export const getAllAnalytics = async (req: Request, res: Response) => {
     }
 
     // Build query object
-    const query: any = { branch };
+    const query: any = { branch: String(branch) };
     
     // Add semester to query if provided
     if (semester) {

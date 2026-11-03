@@ -25,10 +25,19 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
       return res.status(401).json({ message: 'Not authorized, no token' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as jwt.JwtPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string, { algorithms: ['HS256'] }) as jwt.JwtPayload;
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {
       return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Token must belong to an active session (removed on logout)
+    if (!user.tokens?.some(t => t.token === token)) {
+      return res.status(401).json({ message: 'Session expired, please log in again' });
+    }
+
+    if (user.active === false) {
+      return res.status(403).json({ message: 'This account has been deactivated' });
     }
     req.user = {
       id: user._id.toString(),

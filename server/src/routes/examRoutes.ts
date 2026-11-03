@@ -16,6 +16,12 @@ import { protect, adminOnly as admin } from '../middleware/auth';
 
 const router = express.Router();
 
+// Create exam (branch is sent in the request body)
+router.route('/')
+  .post(protect as unknown as express.RequestHandler, admin as express.RequestHandler, async (req, res, next) => {
+    await createExam(req, res);
+  });
+
 router.route('/:branch')
   .get(protect as unknown as express.RequestHandler, async (req, res, next) => {
     await getExams(req, res);

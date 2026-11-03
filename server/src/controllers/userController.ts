@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import User from '../models/User';
 import Exam from '../models/Exam';
@@ -17,7 +18,8 @@ const canModifyTeacher = (req: Request, teacherId: string) => {
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, {
-    expiresIn: '30d',
+    expiresIn: '7d',
+    jwtid: randomUUID(), // unique per session, so logging out one device doesn't affect others
   });
 };
 
@@ -59,8 +61,16 @@ export const loginUser = async (req: Request, res: Response) => {
     const token = generateToken(user._id);
       
       // Add token to user's tokens array
-      // Add token to user's tokens array (keep only the most recent sessions)
-      user.tokens = [...(user.tokens || []), { token }].slice(-5);
+      // Add token to user's tokens array (drop expired ones, keep the most recent sessions)
+      const activeTokens = (user.tokens || []).filter(t => {
+        try {
+          jwt.verify(t.token, process.env.JWT_SECRET as string);
+          return true;
+        } catch {
+          return false;
+        }
+      });
+      user.tokens = [...activeTokens, { token }].slice(-10);
       await user.save();
 
       res.json({
@@ -81,6 +91,21 @@ export const loginUser = async (req: Request, res: Response) => {
       });
       res.status(500).json({ message: 'Server error' });
     }
+};
+
+// Logout - invalidate the current token
+export const logoutUser = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    await User.updateOne({ _id: req.user?.id }, { $pull: { tokens: { token } } });
+    res.json({ message: 'Logged out successfully' });
+  } catch (error: any) {
+    console.error('Logout error:', {
+      message: error.message,
+      stack: error.stack
+    });
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -112,7 +137,6 @@ export const registerUser = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -191,7 +215,6 @@ export const updateUserProfile = async (req: Request, res: Response) => {
         subjectPreferences: updatedUser.subjectPreferences,
         timePreferences: updatedUser.timePreferences,
         availability: updatedUser.availability,
-        token: generateToken(updatedUser._id),
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -231,6 +254,11 @@ export const getTeacherAllocations = async (req: Request, res: Response) => {
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    // Teachers can only view their own duties
+    if (!canModifyTeacher(req, teacherId)) {
+      return res.status(403).json({ message: 'Not authorized to view this teacher' });
     }
 
     // Verify if the teacher exists
@@ -531,6 +559,11 @@ export const getTeacherStats = async (req: Request, res: Response) => {
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
     }
+
+    // Teachers can only view their own duties
+    if (!canModifyTeacher(req, teacherId)) {
+      return res.status(403).json({ message: 'Not authorized to view this teacher' });
+    }
     
     const user = await User.findById(teacherId);
     
@@ -649,6 +682,11 @@ export const getTeacherUpcomingDuties = async (req: Request, res: Response) => {
     
     if (!teacherId) {
       return res.status(400).json({ message: 'Teacher ID is required' });
+    }
+
+    // Teachers can only view their own duties
+    if (!canModifyTeacher(req, teacherId)) {
+      return res.status(403).json({ message: 'Not authorized to view this teacher' });
     }
 
     // Verify if the teacher exists
