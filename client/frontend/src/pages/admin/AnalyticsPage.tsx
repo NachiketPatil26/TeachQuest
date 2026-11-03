@@ -74,6 +74,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [examSlots, setExamSlots] = useState<ExamSlot[]>([]);
+  const [totalExams, setTotalExams] = useState(0);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [subjectDistribution, setSubjectDistribution] = useState<SubjectDistribution[]>([]);
   const [teacherWorkload, setTeacherWorkload] = useState<TeacherWorkload[]>([]);
@@ -109,6 +110,8 @@ export default function AnalyticsPage() {
             setExamSlots(examsData);
           }
           
+          setTotalExams(analyticsData.totalExams ?? 0);
+
           // Set subject distribution from analytics data
           setSubjectDistribution(analyticsData.subjectDistribution || []);
           
@@ -245,7 +248,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <h3 className="text-sm font-medium text-gray-500">Total Exams</h3>
-            <p className="text-2xl font-bold text-gray-800">{examSlots.length}</p>
+            <p className="text-2xl font-bold text-gray-800">{semester ? examSlots.length : totalExams}</p>
           </div>
         </div>
         

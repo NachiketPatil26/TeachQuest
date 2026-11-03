@@ -52,7 +52,7 @@ class OpenRouterService {
         body: JSON.stringify({
           messages,
           model: process.env.OPENROUTER_MODEL || DEFAULT_MODEL,
-          temperature: 0.7,        // Balanced creativity and consistency
+          temperature: 0.2,        // Low randomness for consistent JSON output
           max_tokens: 1024,        // Sufficient length for detailed responses
           top_p: 0.9,              // High-quality token selection
           stream: false            // Complete response at once

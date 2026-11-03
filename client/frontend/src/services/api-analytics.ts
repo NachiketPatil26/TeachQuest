@@ -7,6 +7,7 @@ export interface AnalyticsData {
   subjectDistribution: SubjectDistributionData[];
   statusDistribution: StatusDistributionData[];
   summaryStats: SummaryStats;
+  totalExams?: number;
 }
 
 export interface TeacherWorkloadData {
